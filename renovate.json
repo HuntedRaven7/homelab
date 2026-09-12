@@ -13,12 +13,11 @@
   "reviewers": ["robin"],
   "automerge": true,
   "automergeType": "pr",
-  "automergeSchedule": ["after 10pm", "before 6am", "weekend"],
+  "automergeSchedule": ["after 10pm", "before 6am", "on saturday", "on sunday"],
   "platformAutomerge": true,
-  "schedule": ["after 10pm", "before 6am", "weekend"],
+  "schedule": ["after 10pm", "before 6am", "on saturday", "on sunday"],
   "timezone": "Europe/Stockholm",
   "rangeStrategy": "replace",
-  "prTitle": "chore(deps): {{depName}} {{oldVersion}} -> {{newVersion}}",
   "prBody": "Updates {{depName}} from {{oldVersion}} to {{newVersion}}.\n\n{{#if isMajor}}⚠️ **Major version update** - Review breaking changes!{{/if}}\n\n{{{changelogs}}}",
   "commitMessagePrefix": "chore(deps)",
   "commitMessageTopic": "{{depName}}",
@@ -27,8 +26,9 @@
   "dockerfile": {
     "enabled": false
   },
-  "regexManagers": [
+  "customManagers": [
     {
+      "customType": "regex",
       "fileMatch": ["^quadlets/.*\\.container$"],
       "matchStrings": [
         "Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)@sha256:(?<currentDigest>[a-f0-9]+)"
@@ -39,125 +39,143 @@
       "versioningTemplate": "docker"
     },
     {
+      "customType": "regex",
       "fileMatch": ["^quadlets/.*\\.container$"],
-      "matchStrings": [
-        "Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)"
-      ],
+      "matchStrings": ["Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)"],
       "depNameTemplate": "{{depName}}",
       "datasourceTemplate": "docker",
       "registryUrlTemplate": "https://index.docker.io",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^quadlets/karakeep\\.container$"],
+      "matchStrings": [
+        "Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)@sha256:(?<currentDigest>[a-f0-9]+)"
+      ],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://ghcr.io",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^quadlets/karakeep\\.container$"],
+      "matchStrings": ["Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)"],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://ghcr.io",
       "versioningTemplate": "docker"
     }
   ],
   "packageRules": [
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/tailscale.container"],
       "groupName": "tailscale",
       "automerge": true,
       "automergeType": "pr",
-      "schedule": ["after 10pm", "before 6am", "weekend"]
+      "schedule": ["after 10pm", "before 6am", "on saturday", "on sunday"]
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["tailscale/tailscale"],
       "pinDigests": true,
       "extractVersion": "^v(?<version>.+)$"
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/hermes-agent.container"],
       "groupName": "hermes-agent",
       "automerge": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["nousresearch/hermes-agent"],
       "pinDigests": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/traefik.container"],
       "groupName": "traefik",
       "automerge": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["library/traefik"],
       "pinDigests": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/vaultwarden.container"],
       "groupName": "vaultwarden",
       "automerge": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["vaultwarden/server"],
       "pinDigests": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/prometheus.container"],
       "groupName": "prometheus",
       "automerge": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["prom/prometheus"],
       "pinDigests": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/ntfy.container"],
       "groupName": "ntfy",
       "automerge": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["binwiederhier/ntfy"],
       "pinDigests": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/glance.container"],
       "groupName": "glance",
       "automerge": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["glanceapp/glance"],
       "pinDigests": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/karakeep.container"],
       "groupName": "karakeep",
       "automerge": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["karakeep-app/karakeep"],
-      "pinDigests": true,
-      "registryUrlTemplate": "https://ghcr.io"
+      "pinDigests": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/searxng.container"],
       "groupName": "searxng",
       "automerge": true
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["searxng/searxng"],
       "pinDigests": true
