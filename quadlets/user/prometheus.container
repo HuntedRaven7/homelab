@@ -1,0 +1,20 @@
+[Unit]
+Description=Prometheus Monitoring
+Documentation=https://prometheus.io/docs/
+After=tailscale.service
+Requires=tailscale.service
+
+[Container]
+Image=docker.io/prom/prometheus:latest@sha256:e906cef998316bbe319f98711e1b4d8613ad37e14b08ff831d7036e77b7464f9
+ContainerName=prometheus
+Network=container:tailscale
+Volume=/var/lib/prometheus:/prometheus:Z
+Volume=/etc/prometheus:/etc/prometheus:Z,ro
+Args=--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.console.libraries=/etc/prometheus/console_libraries --web.console.templates=/etc/prometheus/consoles --web.enable-lifecycle --web.enable-admin-api
+ExecStartPre=/usr/bin/mkdir -p /var/lib/prometheus /etc/prometheus
+ExecStartPre=/usr/bin/chmod 700 /var/lib/prometheus
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

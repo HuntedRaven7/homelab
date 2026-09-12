@@ -1,0 +1,23 @@
+[Unit]
+Description=Vaultwarden Password Manager
+Documentation=https://github.com/dani-garcia/vaultwarden
+After=tailscale.service
+Requires=tailscale.service
+
+[Container]
+Image=docker.io/vaultwarden/server:latest@sha256:5d326778c22f063d093d6b0c9c766a28249561632266776f2c93132ab0ad3a80
+ContainerName=vaultwarden
+Network=container:tailscale
+Volume=/var/lib/vaultwarden:/data:Z
+Environment=DOMAIN=https://vault.tailnet.ts.net
+Environment=ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+Environment=SIGNUPS_ALLOWED=false
+Environment=INVITATIONS_ALLOWED=true
+Environment=SHOW_PASSWORD_HINT=false
+Environment=LOG_LEVEL=warn
+Environment=EXTENDED_LOGGING=false
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

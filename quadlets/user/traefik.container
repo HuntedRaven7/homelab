@@ -1,0 +1,20 @@
+[Unit]
+Description=Traefik Reverse Proxy
+Documentation=https://doc.traefik.io/traefik/
+After=tailscale.service
+Requires=tailscale.service
+
+[Container]
+Image=docker.io/library/traefik:latest@sha256:96780238b1bbda5a9bb997f4307ce69e798ad1cf6eb7f2dcc0a440823467d199
+ContainerName=traefik
+Network=container:tailscale
+Volume=/var/lib/traefik:/data:Z
+Volume=/etc/traefik:/etc/traefik:Z,ro
+ExecStartPre=/usr/bin/mkdir -p /var/lib/traefik /etc/traefik
+ExecStartPre=/usr/bin/chmod 700 /var/lib/traefik
+Args=--api.dashboard=true --api.insecure=true --providers.docker=true --providers.docker.exposedbydefault=false --entrypoints.web.address=:80 --entrypoints.websecure.address=:443
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

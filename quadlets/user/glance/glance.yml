@@ -1,0 +1,60 @@
+# Glance Configuration
+# Place in /etc/glance/glance.yml
+
+pages:
+  - name: Home
+    columns:
+      - size: small
+        widgets:
+          - type: clock
+            format: 24h
+            timezone: local
+      - size: full
+        widgets:
+          - type: markdown
+            content: |
+              # 🏠 Homelab Dashboard
+              Welcome to your homelab overview.
+      - size: medium
+        widgets:
+          - type: traefik
+            url: http://traefik:8080
+            title: Traefik
+      - size: medium
+        widgets:
+          - type: prometheus
+            url: http://prometheus:9090
+            queries:
+              - expr: up
+                legend: Services Up
+      - size: medium
+        widgets:
+          - type: docker
+            url: unix:///var/run/docker.sock
+            title: Containers
+  - name: Services
+    columns:
+      - size: full
+        widgets:
+          - type: markdown
+            content: |
+              ## Services Status
+              All services running via Tailscale mesh network.
+      - size: medium
+        widgets:
+          - type: ping
+            hosts:
+              - name: Hermes Agent
+                host: hermes-agent:8000
+              - name: Vaultwarden
+                host: vaultwarden:80
+              - name: Ntfy
+                host: ntfy:80
+              - name: Karakeep
+                host: karakeep:3000
+              - name: SearXNG
+                host: searxng:8080
+              - name: Prometheus
+                host: prometheus:9090
+              - name: Traefik
+                host: traefik:8080

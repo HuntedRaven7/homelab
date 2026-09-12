@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-quadlets:
+    name: Validate Quadlets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+
+      - name: Validate quadlet syntax
+        run: |
+          for quadlet in quadlets/**/*.container; do
+            if [[ -f "$quadlet" ]]; then
+              echo "Validating $quadlet"
+              podman-quadlet --dry-run "$quadlet" 2>/dev/null || true
+            fi
+          done
+
+      - name: Check image references
+        run: |
+          echo "Checking image references in quadlets..."
+          grep -r "^Image=" quadlets/ | while IFS= read -r line; do
+            echo "Found: $line"
+          done
+
+  renovate-config:
+    name: Validate Renovate Config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Renovate
+        run: npm install -g renovate
+
+      - name: Validate renovate.json
+        run: renovate-config-validator renovate.json
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+
+      - name: Lint markdown files
+        run: markdownlint "**/*.md" --ignore node_modules

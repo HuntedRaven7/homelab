@@ -1,0 +1,17 @@
+[Unit]
+Description=Glance Dashboard
+Documentation=https://github.com/glanceapp/glance
+After=tailscale.service
+Requires=tailscale.service
+
+[Container]
+Image=docker.io/glanceapp/glance:latest@sha256:e71f219c5894dde27644daea2fc77984e20bcab0e54a71f8f845a3ed5a5f06f6
+ContainerName=glance
+Network=container:tailscale
+Volume=/etc/glance:/app/config:Z,ro
+Environment=GLANCE_CONFIG_PATH=/app/config/glance.yml
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

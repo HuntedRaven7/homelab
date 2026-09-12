@@ -1,0 +1,181 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":label(dependencies)",
+    ":automergePatch",
+    ":automergeMinor",
+    ":prConcurrentLimit(5)",
+    ":prHourlyLimit(2)"
+  ],
+  "labels": ["dependencies"],
+  "assignees": ["robin"],
+  "reviewers": ["robin"],
+  "automerge": true,
+  "automergeType": "pr",
+  "automergeSchedule": ["after 10pm", "before 6am", "weekend"],
+  "platformAutomerge": true,
+  "schedule": ["after 10pm", "before 6am", "weekend"],
+  "timezone": "Europe/Stockholm",
+  "rangeStrategy": "replace",
+  "prTitle": "chore(deps): {{depName}} {{oldVersion}} -> {{newVersion}}",
+  "prBody": "Updates {{depName}} from {{oldVersion}} to {{newVersion}}.\n\n{{#if isMajor}}⚠️ **Major version update** - Review breaking changes!{{/if}}\n\n{{{changelogs}}}",
+  "commitMessagePrefix": "chore(deps)",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageAction": "update",
+  "commitMessageExtra": "from {{oldVersion}} to {{newVersion}}",
+  "dockerfile": {
+    "enabled": false
+  },
+  "regexManagers": [
+    {
+      "fileMatch": ["^quadlets/.*\\.container$"],
+      "matchStrings": [
+        "Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)@sha256:(?<currentDigest>[a-f0-9]+)"
+      ],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "versioningTemplate": "docker"
+    },
+    {
+      "fileMatch": ["^quadlets/.*\\.container$"],
+      "matchStrings": [
+        "Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)"
+      ],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "versioningTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/tailscale.container"],
+      "groupName": "tailscale",
+      "automerge": true,
+      "automergeType": "pr",
+      "schedule": ["after 10pm", "before 6am", "weekend"]
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["tailscale/tailscale"],
+      "pinDigests": true,
+      "extractVersion": "^v(?<version>.+)$"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/hermes-agent.container"],
+      "groupName": "hermes-agent",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["nousresearch/hermes-agent"],
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/traefik.container"],
+      "groupName": "traefik",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["library/traefik"],
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/vaultwarden.container"],
+      "groupName": "vaultwarden",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["vaultwarden/server"],
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/prometheus.container"],
+      "groupName": "prometheus",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["prom/prometheus"],
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/ntfy.container"],
+      "groupName": "ntfy",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["binwiederhier/ntfy"],
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/glance.container"],
+      "groupName": "glance",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["glanceapp/glance"],
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/karakeep.container"],
+      "groupName": "karakeep",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["karakeep-app/karakeep"],
+      "pinDigests": true,
+      "registryUrlTemplate": "https://ghcr.io"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/searxng.container"],
+      "groupName": "searxng",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["searxng/searxng"],
+      "pinDigests": true
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["major-update"]
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    }
+  ],
+  "ignorePaths": [
+    "**/*.env.example",
+    "**/*.md",
+    "docs/**",
+    "scripts/**"
+  ]
+}

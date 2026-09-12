@@ -1,0 +1,26 @@
+[Unit]
+Description=Tailscale VPN
+Documentation=https://tailscale.com/kb/
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/tailscale/tailscale:stable@sha256:51fec4863144d6ba0a22504cfb455d020ee0307d0c04eb48f5afee63390bdba0
+ContainerName=tailscale
+Network=host
+Capability=CAP_NET_ADMIN
+Capability=CAP_SYS_MODULE
+Capability=CAP_DAC_OVERRIDE
+Device=/dev/net/tun:/dev/net/tun
+Volume=/var/lib/tailscale:/var/lib/tailscale
+Volume=/dev/net/tun:/dev/net/tun
+Environment=TS_AUTHKEY=${TAILSCALE_AUTH_KEY}
+Environment=TS_HOSTNAME=${HOSTNAME}
+Environment=TS_EXTRA_ARGS=--accept-routes --advertise-routes=192.168.1.0/24
+ExecStartPre=/usr/bin/mkdir -p /var/lib/tailscale
+ExecStartPre=/usr/bin/chmod 700 /var/lib/tailscale
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
