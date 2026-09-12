@@ -1,10 +1,11 @@
 # Managing Quadlets
 
-This guide covers deploying, updating, debugging, and monitoring Podman Quadlet services.
+This guide covers deploying, updating, debugging, and monitoring
+Podman Quadlet services.
 
 ## Directory Structure
 
-```
+```text
 quadlets/
 ├── system/          # System services (installed to /etc/containers/systemd/)
 └── user/            # User services (installed to ~/.config/containers/systemd/)
@@ -142,6 +143,7 @@ systemctl --user restart tailscale
 ### Common Issues
 
 **Service fails to start:**
+
 ```bash
 # Check detailed status
 systemctl --user status tailscale --full
@@ -157,6 +159,7 @@ podman run --rm -it --network host --cap-add NET_ADMIN --cap-add SYS_MODULE \
 ```
 
 **Permission denied on volumes:**
+
 ```bash
 # Fix volume permissions
 mkdir -p /var/lib/tailscale
@@ -164,6 +167,7 @@ chmod 700 /var/lib/tailscale
 ```
 
 **Network issues:**
+
 ```bash
 # Check if podman network exists
 podman network ls
@@ -238,15 +242,19 @@ Update `renovate.json` to include the new image for automated updates.
 ## Quadlet Types
 
 ### Container (`.container`)
+
 Main service definition - most common type.
 
 ### Network (`.network`)
+
 Custom podman networks for service communication.
 
 ### Volume (`.volume`)
+
 Named volumes for persistent data.
 
 ### Kube (`.kube`)
+
 Kubernetes YAML for complex multi-container pods.
 
 ## Best Practices

@@ -1,10 +1,12 @@
 # Renovate Bot Configuration
 
-This document explains how Renovate is configured for automated dependency updates in this homelab repository.
+This document explains how Renovate is configured for automated
+dependency updates in this homelab repository.
 
 ## Overview
 
 Renovate automatically:
+
 1. Scans quadlet files for container images
 2. Checks for newer versions on Docker Hub
 3. Creates PRs with updated image digests (SHA256)
@@ -16,13 +18,13 @@ Location: `renovate.json` (repository root)
 
 ### Key Settings
 
-| Setting | Value | Description |
-|---------|-------|-------------|
-| `automerge` | `true` | Auto-merge PRs when checks pass |
-| `automergeType` | `"pr"` | Merge via PR (not direct push) |
-| `schedule` | Nightly/weekend | Run outside business hours |
-| `timezone` | `Europe/Stockholm` | Local timezone for scheduling |
-| `pinDigests` | `true` | Always pin to SHA256 digest |
+| Setting         | Value              | Description                        |
+|-----------------|--------------------|------------------------------------|
+| `automerge`     | `true`             | Auto-merge PRs when checks pass    |
+| `automergeType` | `"pr"`             | Merge via PR (not direct push)     |
+| `schedule`      | Nightly/weekend    | Run outside business hours         |
+| `timezone`      | `Europe/Stockholm` | Local timezone for scheduling      |
+| `pinDigests`    | `true`             | Always pin to SHA256 digest        |
 
 ### Regex Managers
 
@@ -41,6 +43,7 @@ Renovate uses custom regex managers to parse quadlet files:
 ```
 
 This matches both:
+
 - `Image=docker.io/tailscale/tailscale:v1.74.0@sha256:abc123...`
 - `Image=docker.io/tailscale/tailscale:v1.74.0`
 
@@ -83,6 +86,7 @@ Handles Tailscale's `v1.74.0` version format.
 ```
 
 Major version updates:
+
 - **Not auto-merged**
 - Labeled `major-update` for visibility
 - Require manual review for breaking changes
@@ -99,6 +103,7 @@ Major version updates:
 ### PR Creation
 
 For each update found:
+
 1. Creates branch: `renovate/tailscale-1.75.0`
 2. Updates quadlet with new digest
 3. Opens PR with conventional commit title
@@ -106,7 +111,7 @@ For each update found:
 
 ### PR Content Example
 
-```
+```text
 chore(deps): tailscale/tailscale v1.74.0 -> v1.75.0
 
 Updates tailscale/tailscale from v1.74.0 to v1.75.0.
@@ -123,11 +128,13 @@ Updates tailscale/tailscale from v1.74.0 to v1.75.0.
 ## Auto-Merge Behavior
 
 ### Patch/Minor Updates (Auto-Merge)
+
 - Run nightly/weekend
 - Merge when CI passes
 - No notification unless failure
 
 ### Major Updates (Manual)
+
 - PR created but not merged
 - Labelled `major-update`
 - Requires manual review and merge
@@ -138,7 +145,8 @@ When adding a new service quadlet:
 
 ### 1. Add to Regex Manager (if needed)
 
-The default regex matches standard `Image=` lines. No changes needed for typical cases.
+The default regex matches standard `Image=` lines. No changes
+needed for typical cases.
 
 ### 2. Add Package Rule (Optional)
 
@@ -161,6 +169,7 @@ The default regex matches standard `Image=` lines. No changes needed for typical
 ```
 
 Common patterns:
+
 - `v1.2.3` → `^v(?<version>.+)$`
 - `1.2.3` → `^(?<version>.+)$`
 - `latest` → Not recommended (unpinned)
@@ -208,6 +217,7 @@ renovate-config-validator renovate.json
 ### Rate Limiting
 
 If hitting GitHub API limits:
+
 ```json
 "prConcurrentLimit": 3,
 "prHourlyLimit": 1
@@ -218,13 +228,14 @@ If hitting GitHub API limits:
 ### Check Renovate Status
 
 - GitHub: Repository → Insights → Dependency graph
-- Renovate Dashboard: https://app.renovatebot.com/
+- Renovate Dashboard: <https://app.renovatebot.com/>
 - PR labels: `dependencies`, `major-update`
 
 ### Audit Log
 
 View all Renovate activity:
-```
+
+```text
 Settings → Applications → Renovate → Configure → Audit log
 ```
 
@@ -250,6 +261,7 @@ Or add to `ignorePaths` for entire files.
 ## Migration from Dependabot
 
 If migrating from Dependabot:
+
 1. Disable Dependabot in GitHub settings
 2. Enable Renovate GitHub App
 3. Add `renovate.json`

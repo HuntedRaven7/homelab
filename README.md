@@ -1,10 +1,13 @@
 # Homelab
 
-A declarative, GitOps-style homelab infrastructure managed with **Podman Quadlets** and **systemd**.
+A declarative, GitOps-style homelab infrastructure managed with
+**Podman Quadlets** and **systemd**.
 
 ## Purpose
 
-This repository serves as the single source of truth for my homelab infrastructure. It uses Podman Quadlets to define containerized services as systemd units, enabling:
+This repository serves as the single source of truth for my homelab
+infrastructure. It uses Podman Quadlets to define containerized
+services as systemd units, enabling:
 
 - **Declarative configuration** - All services defined as code
 - **GitOps workflow** - Changes tracked, reviewed, and deployed via Git
@@ -15,7 +18,7 @@ This repository serves as the single source of truth for my homelab infrastructu
 
 ## Architecture
 
-```
+```text
 homelab/
 ├── quadlets/
 │   ├── system/          # System-level services (require root)
@@ -29,7 +32,10 @@ homelab/
 └── README.md            # This file
 ```
 
-All user services run on the **Tailscale network namespace** (`Network=container:tailscale`), meaning they're only accessible via the Tailscale mesh. Traefik acts as the ingress controller, routing traffic based on hostnames.
+All user services run on the **Tailscale network namespace**
+(`Network=container:tailscale`), meaning they're only accessible
+via the Tailscale mesh. Traefik acts as the ingress controller,
+routing traffic based on hostnames.
 
 ## Quick Start
 
@@ -99,32 +105,70 @@ systemctl --user enable --now prometheus
 
 ## Services
 
-All services run on the Tailscale network (`Network=container:tailscale`) and are accessible via Traefik at `https://<service>.your-tailnet.ts.net`.
+All services run on the Tailscale network
+(`Network=container:tailscale`) and are accessible via Traefik at
+`https://<service>.your-tailnet.ts.net`.
 
-| Service | Type | Description | Quadlet | Port | URL |
-|---------|------|-------------|---------|------|-----|
-| **Tailscale** | User | VPN mesh networking | `tailscale.container` | - | - |
-| **Traefik** | User | Reverse proxy / ingress | `traefik.container` | 80/443 | `https://traefik.tailnet.ts.net:8080` |
-| **Hermes Agent** | User | Local AI inference (Nous) | `hermes-agent.container` | 8000 | `https://hermes.tailnet.ts.net` |
-| **Vaultwarden** | User | Password manager | `vaultwarden.container` | 80 | `https://vault.tailnet.ts.net` |
-| **Ntfy** | User | Push notifications | `ntfy.container` | 80 | `https://ntfy.tailnet.ts.net` |
-| **Glance** | User | Dashboard | `glance.container` | 8080 | `https://glance.tailnet.ts.net` |
-| **Karakeep** | User | Bookmark manager | `karakeep.container` | 3000 | `https://karakeep.tailnet.ts.net` |
-| **SearXNG** | User | Privacy search engine | `searxng.container` | 8080 | `https://search.tailnet.ts.net` |
-| **Prometheus** | User | Metrics collection | `prometheus.container` | 9090 | `https://prometheus.tailnet.ts.net` |
+- **Tailscale** (User) - VPN mesh networking
+  - Quadlet: `tailscale.container`
+  - Port: -
+  - URL: -
+
+- **Traefik** (User) - Reverse proxy
+  - Quadlet: `traefik.container`
+  - Port: 80/443
+  - URL: `traefik:8080`
+
+- **Hermes Agent** (User) - Local AI inference
+  - Quadlet: `hermes-agent.container`
+  - Port: 8000
+  - URL: `hermes`
+
+- **Vaultwarden** (User) - Password manager
+  - Quadlet: `vaultwarden.container`
+  - Port: 80
+  - URL: `vault`
+
+- **Ntfy** (User) - Push notifications
+  - Quadlet: `ntfy.container`
+  - Port: 80
+  - URL: `ntfy`
+
+- **Glance** (User) - Dashboard
+  - Quadlet: `glance.container`
+  - Port: 8080
+  - URL: `glance`
+
+- **Karakeep** (User) - Bookmark manager
+  - Quadlet: `karakeep.container`
+  - Port: 3000
+  - URL: `karakeep`
+
+- **SearXNG** (User) - Privacy search
+  - Quadlet: `searxng.container`
+  - Port: 8080
+  - URL: `search`
+
+- **Prometheus** (User) - Metrics collection
+  - Quadlet: `prometheus.container`
+  - Port: 9090
+  - URL: `prometheus`
 
 ## Tailscale Integration
 
-Each service quadlet uses `Network=container:tailscale` to join the Tailscale container's network namespace. This provides:
+Each service quadlet uses `Network=container:tailscale` to join the
+Tailscale container's network namespace. This provides:
 
-- **Zero-config networking** - Services auto-discover each other via container names
+- **Zero-config networking** - Services auto-discover each other
+  via container names
 - **Secure by default** - No ports exposed to host, only via Tailscale
 - **Mesh VPN** - Access from any device on your tailnet
 - **MagicDNS** - Use `service-name.tailnet.ts.net` for routing
 
 ### Tailscale Configuration
 
-The Tailscale quadlet advertises routes for your local subnet and accepts routes from other nodes:
+The Tailscale quadlet advertises routes for your local subnet and
+accepts routes from other nodes:
 
 ```ini
 Environment=TS_EXTRA_ARGS=--accept-routes --advertise-routes=192.168.1.0/24
@@ -134,8 +178,10 @@ Adjust `--advertise-routes` to match your LAN subnet.
 
 ## Management
 
-- [Managing Quadlets](docs/managing-quadlets.md) - Deploy, update, debug, and monitor services
-- [Managing Repository](docs/managing-repo.md) - Git workflow, contributing, releases
+- [Managing Quadlets](docs/managing-quadlets.md) - Deploy, update,
+  debug, and monitor services
+- [Managing Repository](docs/managing-repo.md) - Git workflow,
+  contributing, releases
 - [Renovate Bot](docs/renovate.md) - Automated dependency updates
 
 ## Adding New Services

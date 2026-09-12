@@ -1,10 +1,12 @@
 # Managing the Repository
 
-This guide covers the Git workflow, branching strategy, contribution process, and repository maintenance for the homelab repository.
+This guide covers the Git workflow, branching strategy,
+contribution process, and repository maintenance for
+the homelab repository.
 
 ## Repository Structure
 
-```
+```text
 homelab/
 ├── .github/
 │   ├── workflows/       # GitHub Actions (CI, renovate)
@@ -28,7 +30,7 @@ homelab/
 
 ### Feature Branches
 
-```
+```text
 feature/<short-description>   # New services, features
 fix/<short-description>       # Bug fixes
 chore/<short-description>     # Maintenance, updates
@@ -69,7 +71,7 @@ git commit -m "feat: add newservice quadlet
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```text
 <type>[optional scope]: <description>
 
 [optional body]
@@ -78,6 +80,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 **Types:**
+
 - `feat` - New feature/service
 - `fix` - Bug fix
 - `chore` - Maintenance, dependency updates
@@ -87,7 +90,8 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `test` - Adding tests
 
 **Examples:**
-```
+
+```bash
 feat: add prometheus quadlet with node-exporter
 fix: correct tailscale volume permissions
 chore: update tailscale to v1.75.0
@@ -104,10 +108,10 @@ git push origin feature/add-new-service
 # Open PR via GitHub CLI or web UI
 gh pr create --title "feat: add newservice quadlet" \
   --body "Adds newservice with...
-  
-  - Container config
-  - Env template
-  - Renovate config"
+
+- Container config
+- Env template
+- Renovate config"
 ```
 
 ### 4. PR Requirements
@@ -231,10 +235,10 @@ gh run list --workflow=CI
 
 Store in Settings → Secrets → Actions:
 
-| Secret | Purpose |
-|--------|---------|
-| `TAILSCALE_AUTH_KEY` | For CI testing (if needed) |
-| `GH_TOKEN` | For Renovate (auto-configured) |
+| Secret              | Purpose                          |
+|---------------------|----------------------------------|
+| `TAILSCALE_AUTH_KEY`| For CI testing (if needed)       |
+| `GH_TOKEN`          | For Renovate (auto-configured)   |
 
 ### Local Secrets
 
@@ -247,7 +251,8 @@ Store in Settings → Secrets → Actions:
 ```
 
 Template files (committed):
-```
+
+```text
 quadlets/user/tailscale.env.example
 ```
 
@@ -312,15 +317,15 @@ Make executable: `chmod +x scripts/deploy-quadlets.sh`
 
 ## Quick Reference
 
-| Task | Command |
-|------|---------|
-| New feature | `git checkout -b feature/name` |
-| Quick fix | `git checkout -b fix/name` |
-| View changes | `git diff` |
-| Stage all | `git add -A` |
-| Commit | `git commit -m "type: message"` |
-| Push | `git push origin branch-name` |
-| Open PR | `gh pr create` |
-| Merge PR | `gh pr merge --squash` |
-| Sync main | `git checkout main && git pull` |
-| Deploy quadlets | `./scripts/deploy-quadlets.sh` |
+| Task             | Command                                 |
+|------------------|-----------------------------------------|
+| New feature      | `git checkout -b feature/name`          |
+| Quick fix        | `git checkout -b fix/name`              |
+| View changes     | `git diff`                              |
+| Stage all        | `git add -A`                            |
+| Commit           | `git commit -m "type: message"`         |
+| Push             | `git push origin branch-name`           |
+| Open PR          | `gh pr create`                          |
+| Merge PR         | `gh pr merge --squash`                  |
+| Sync main        | `git checkout main && git pull`         |
+| Deploy quadlets  | `./scripts/deploy-quadlets.sh`          |
