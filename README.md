@@ -48,26 +48,36 @@ homelab/
 
 ### Hybrid Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        TAILSCALE MESH                           │
-│  ┌──────────────────┐  ┌────────────────────────────────────┐  │
-│  │  Podman Quadlets │  │         k0s Cluster                │  │
-│  │  (Rootless)      │  │  (System-level)                    │  │
-│  ├──────────────────┤  ├────────────────────────────────────┤  │
-│  │ • Tailscale      │  │ • Traefik (DaemonSet, hostPort)   │  │
-│  │ • Hermes Agent   │  │   - Ingress controller             │  │
-│  │ • Vaultwarden    │  │   - TLS termination                │  │
-│  │ • Ntfy           │  │   - hostPort 80/443                │  │
-│  │ • Glance         │  │ • Prometheus Stack (Helm)          │  │
-│  │ • Karakeep       │  │   - Prometheus + Alertmanager      │  │
-│  │ • SearXNG        │  │   - Grafana                        │  │
-│  └────────┬─────────┘  │   - ServiceMonitors + Rules        │  │
-│           │            └──────────────┬─────────────────────┘  │
-│           │                       │                             │
-│           └───────────────────────┘                             │
-│                    ExternalName Services                        │
-└─────────────────────────────────────────────────────────────────┘
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              TAILSCALE MESH                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────────────────┐         ┌─────────────────────────────────┐  │
+│   │   Podman Quadlets       │         │          k0s Cluster            │  │
+│   │   (Rootless, User)      │         │      (System-level)             │  │
+│   ├─────────────────────────┤         ├─────────────────────────────────┤  │
+│   │                         │         │                                 │  │
+│   │  • Tailscale            │         │  • Traefik (DaemonSet)          │  │
+│   │  • Hermes Agent         │         │     - Ingress Controller        │  │
+│   │  • Vaultwarden          │         │     - TLS Termination           │  │
+│   │  • Ntfy                 │         │     - hostPort 80/443           │  │
+│   │  • Glance               │         │                                 │  │
+│   │  • Karakeep             │         │  • Prometheus Stack (Helm)      │  │
+│   │  • SearXNG              │         │     - Prometheus + Alertmanager │  │
+│   │                         │         │     - Grafana                   │  │
+│   │                         │         │     - ServiceMonitors + Rules   │  │
+│   └──────────────┬──────────┘         └───────────────┬────────────────┘  │
+│                  │                                    │                   │
+│                  │        ExternalName Services       │                   │
+│                  └────────────────┬───────────────────┘                   │
+│                                   │                                       │
+│              ┌────────────────────┴────────────────────┐                  │
+│              │     Tailscale MagicDNS Resolution       │                  │
+│              │  service.tailnet.ts.net → 100.x.y.z     │                  │
+│              └─────────────────────────────────────────┘                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 - **Application services** run as rootless Podman containers on the Tailscale network namespace (`Network=container:tailscale`)
