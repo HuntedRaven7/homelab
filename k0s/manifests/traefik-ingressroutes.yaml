@@ -1,0 +1,270 @@
+---
+# IngressRoutes for Homelab Services
+# These route traffic from Traefik to the services
+# Services run on Tailscale network, so we use ExternalName services or direct IPs
+
+---
+# Tailscale ExternalName Service (for accessing tailscale from cluster)
+apiVersion: v1
+kind: Service
+metadata:
+  name: tailscale
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: tailscale.tailnet.ts.net
+  ports:
+    - port: 80
+      targetPort: 80
+---
+# Hermes Agent IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: hermes-agent
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`hermes.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: hermes-agent
+          port: 8000
+          kind: Service
+      middlewares:
+        - name: security-headers
+          namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-agent
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: hermes-agent.tailnet.ts.net
+  ports:
+    - port: 8000
+      targetPort: 8000
+---
+# Vaultwarden IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: vaultwarden
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`vault.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: vaultwarden
+          port: 80
+          kind: Service
+      middlewares:
+        - name: security-headers
+          namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: vaultwarden.tailnet.ts.net
+  ports:
+    - port: 80
+      targetPort: 80
+---
+# Ntfy IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ntfy
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`ntfy.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: ntfy
+          port: 80
+          kind: Service
+      middlewares:
+        - name: security-headers
+          namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ntfy
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: ntfy.tailnet.ts.net
+  ports:
+    - port: 80
+      targetPort: 80
+---
+# Glance IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: glance
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`glance.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: glance
+          port: 8080
+          kind: Service
+      middlewares:
+        - name: security-headers
+          namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glance
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: glance.tailnet.ts.net
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# Karakeep IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: karakeep
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`karakeep.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: karakeep
+          port: 3000
+          kind: Service
+      middlewares:
+        - name: security-headers
+          namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: karakeep
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: karakeep.tailnet.ts.net
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+# SearXNG IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: searxng
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`search.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: searxng
+          port: 8080
+          kind: Service
+      middlewares:
+        - name: security-headers
+          namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: searxng
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: searxng.tailnet.ts.net
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# Prometheus IngressRoute (from k0s monitoring)
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`prometheus.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: prometheus-kube-prometheus-prometheus
+          port: 9090
+          kind: Service
+      middlewares:
+        - name: security-headers
+          namespace: kube-system
+---
+# Grafana IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`grafana.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: prometheus-grafana
+          port: 80
+          kind: Service
+      middlewares:
+        - name: security-headers
+          namespace: kube-system
+---
+# Alertmanager IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`alertmanager.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: prometheus-kube-prometheus-alertmanager
+          port: 9093
+          kind: Service
+      middlewares:
+        - name: security-headers
+          namespace: kube-system

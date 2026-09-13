@@ -66,6 +66,50 @@
       "datasourceTemplate": "docker",
       "registryUrlTemplate": "https://ghcr.io",
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/config/k0s\\.yaml$"],
+      "matchStrings": [
+        "name: traefik/traefik\\n\\s+version: \"(?<currentValue>[^\"]+)\""
+      ],
+      "depNameTemplate": "traefik/traefik",
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://traefik.github.io/charts",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/config/k0s\\.yaml$"],
+      "matchStrings": [
+        "name: prometheus-community/kube-prometheus-stack\\n\\s+version: \"(?<currentValue>[^\"]+)\""
+      ],
+      "depNameTemplate": "prometheus-community/kube-prometheus-stack",
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://prometheus-community.github.io/helm-charts",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/manifests/traefik-deployment\\.yaml$"],
+      "matchStrings": [
+        "image: traefik:(?<currentValue>[^\\s]+)"
+      ],
+      "depNameTemplate": "traefik/traefik",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/manifests/traefik-deployment\\.yaml$"],
+      "matchStrings": [
+        "image: traefik:(?<currentValue>[^\\s]+)@sha256:(?<currentDigest>[a-f0-9]+)"
+      ],
+      "depNameTemplate": "traefik/traefik",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "versioningTemplate": "docker"
     }
   ],
   "packageRules": [
@@ -178,6 +222,30 @@
       "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["searxng/searxng"],
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["**/k0s.yaml"],
+      "groupName": "k0s-helm",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchDatasources": ["helm"],
+      "matchPackageNames": ["traefik/traefik", "prometheus-community/kube-prometheus-stack"],
+      "pinDigests": false
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["**/traefik-deployment.yaml"],
+      "groupName": "traefik-image",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["traefik/traefik"],
       "pinDigests": true
     },
     {

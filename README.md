@@ -1,41 +1,79 @@
 # Homelab
 
 A declarative, GitOps-style homelab infrastructure managed with
-**Podman Quadlets** and **systemd**.
+**Podman Quadlets**, **systemd**, and **k0s Kubernetes**.
 
 ## Purpose
 
 This repository serves as the single source of truth for my homelab
-infrastructure. It uses Podman Quadlets to define containerized
-services as systemd units, enabling:
+infrastructure. It uses a hybrid approach:
 
+- **Podman Quadlets + systemd** for application services (rootless, Tailscale mesh)
+- **k0s Kubernetes** for cluster infrastructure (Traefik ingress, Prometheus monitoring)
+
+This enables:
 - **Declarative configuration** - All services defined as code
 - **GitOps workflow** - Changes tracked, reviewed, and deployed via Git
-- **Systemd integration** - Native service management, logging, and dependencies
+- **Systemd integration** - Native service management for rootless containers
 - **Rootless containers** - Secure, unprivileged service execution
 - **Automated updates** - Renovate bot creates PRs for image/hash updates
 - **Tailscale mesh** - All services communicate via Tailscale VPN
+- **Kubernetes-native ingress & monitoring** - Traefik + Prometheus stack on k0s
 
 ## Architecture
 
 ```text
 homelab/
+├── k0s/
+│   ├── config/k0s.yaml           # k0s cluster configuration
+│   └── manifests/                # Kubernetes manifests
+│       ├── traefik-crds.yaml     # Traefik CRDs (IngressRoute, Middleware)
+│       ├── traefik-deployment.yaml  # Traefik DaemonSet + RBAC
+│       ├── traefik-ingressroutes.yaml  # IngressRoutes for all services
+│       ├── prometheus-servicemonitors.yaml  # ServiceMonitors for Tailscale services
+│       └── prometheus-rules.yaml  # PrometheusRules for alerting
 ├── quadlets/
-│   ├── system/          # System-level services (require root)
-│   └── user/            # User-level services (rootless, preferred)
+│   ├── system/                   # System-level services (require root)
+│   └── user/                     # User-level services (rootless, preferred)
 ├── docs/
-│   ├── managing-quadlets.md    # How to deploy, update, debug quadlets
-│   ├── managing-repo.md        # Git workflow, branching, PR process
-│   └── renovate.md             # Renovate bot configuration guide
-├── scripts/             # Helper scripts (deploy-quadlets.sh)
-├── renovate.json        # Renovate bot configuration
-└── README.md            # This file
+│   ├── managing-quadlets.md      # How to deploy, update, debug quadlets
+│   ├── managing-repo.md          # Git workflow, branching, PR process
+│   └── renovate.md               # Renovate bot configuration guide
+├── scripts/
+│   ├── deploy-quadlets.sh        # Deploy Podman Quadlets
+│   └── bootstrap-k0s.sh          # Bootstrap k0s cluster
+├── renovate.json                 # Renovate bot configuration
+└── README.md                     # This file
 ```
 
-All user services run on the **Tailscale network namespace**
-(`Network=container:tailscale`), meaning they're only accessible
-via the Tailscale mesh. Traefik acts as the ingress controller,
-routing traffic based on hostnames.
+### Hybrid Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        TAILSCALE MESH                           │
+│  ┌──────────────────┐  ┌────────────────────────────────────┐  │
+│  │  Podman Quadlets │  │         k0s Cluster                │  │
+│  │  (Rootless)      │  │  (System-level)                    │  │
+│  ├──────────────────┤  ├────────────────────────────────────┤  │
+│  │ • Tailscale      │  │ • Traefik (DaemonSet, hostPort)   │  │
+│  │ • Hermes Agent   │  │   - Ingress controller             │  │
+│  │ • Vaultwarden    │  │   - TLS termination                │  │
+│  │ • Ntfy           │  │   - hostPort 80/443                │  │
+│  │ • Glance         │  │ • Prometheus Stack (Helm)          │  │
+│  │ • Karakeep       │  │   - Prometheus + Alertmanager      │  │
+│  │ • SearXNG        │  │   - Grafana                        │  │
+│  └────────┬─────────┘  │   - ServiceMonitors + Rules        │  │
+│           │            └──────────────┬─────────────────────┘  │
+│           │                       │                             │
+│           └───────────────────────┘                             │
+│                    ExternalName Services                        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- **Application services** run as rootless Podman containers on the Tailscale network namespace (`Network=container:tailscale`)
+- **Traefik** runs as a k0s DaemonSet with `hostPort: 80/443`, acting as the ingress controller
+- **Prometheus Stack** runs in k0s via Helm (kube-prometheus-stack), scraping metrics from services via `ExternalName` Services pointing to Tailscale MagicDNS names
+- **IngressRoutes** (Traefik CRDs) route traffic from `service.tailnet.ts.net` → k0s Traefik → ExternalName Service → Tailscale → Podman container
 
 ## Quick Start
 
@@ -45,8 +83,9 @@ routing traffic based on hostnames.
 - `podman` and `systemd` user lingering enabled
 - Git
 - Tailscale account
+- For k0s: 2GB+ RAM, 2+ CPU cores
 
-### Bootstrap a New Machine
+### Bootstrap a New Machine (Podman Quadlets)
 
 ```bash
 # 1. Enable user lingering (allows user services to start at boot)
@@ -67,108 +106,82 @@ cp quadlets/user/ntfy.env.example ~/.config/containers/ntfy.env
 cp quadlets/user/glance.env.example ~/.config/containers/glance.env
 cp quadlets/user/karakeep.env.example ~/.config/containers/karakeep.env
 cp quadlets/user/searxng.env.example ~/.config/containers/searxng.env
-cp quadlets/user/prometheus.env.example ~/.config/containers/prometheus.env
-cp quadlets/user/traefik.env.example ~/.config/containers/traefik.env
 
 # 4. Deploy quadlets (symlink to systemd user directory)
 ./scripts/deploy-quadlets.sh
 
-# 5. Configure Traefik dynamic config
-mkdir -p /etc/traefik
-cp quadlets/user/traefik/dynamic.yml /etc/traefik/dynamic.yml
-# Edit /etc/traefik/dynamic.yml with your tailnet domain
-
-# 6. Configure Prometheus
-mkdir -p /etc/prometheus
-cp quadlets/user/prometheus/prometheus.yml /etc/prometheus/prometheus.yml
-
-# 7. Configure Glance
+# 5. Configure Glance
 mkdir -p /etc/glance
 cp quadlets/user/glance/glance.yml /etc/glance/glance.yml
 
-# 8. Configure SearXNG
+# 6. Configure SearXNG
 mkdir -p /etc/searxng
 cp quadlets/user/searxng/settings.yml /etc/searxng/settings.yml
 
-# 9. Start services
+# 7. Start application services
 systemctl --user daemon-reload
 systemctl --user enable --now tailscale
-systemctl --user enable --now traefik
 systemctl --user enable --now hermes-agent
 systemctl --user enable --now vaultwarden
 systemctl --user enable --now ntfy
 systemctl --user enable --now glance
 systemctl --user enable --now karakeep
 systemctl --user enable --now searxng
-systemctl --user enable --now prometheus
+```
+
+### Bootstrap k0s Cluster (Traefik + Prometheus)
+
+Run on the control plane node:
+
+```bash
+# 1. Run bootstrap script (installs k0s, Traefik, Prometheus stack)
+./scripts/bootstrap-k0s.sh
+
+# 2. Verify cluster
+kubectl get nodes -o wide
+kubectl get pods -A
+
+# 3. Access services via Traefik (host ports 80/443)
+# All routes configured in k0s/manifests/traefik-ingressroutes.yaml
 ```
 
 ## Services
 
-All services run on the Tailscale network
-(`Network=container:tailscale`) and are accessible via Traefik at
-`https://<service>.your-tailnet.ts.net`.
+### Application Services (Podman Quadlets on Tailscale)
 
-- **Tailscale** (User) - VPN mesh networking
-  - Quadlet: `tailscale.container`
-  - Port: -
-  - URL: -
+All services run on the Tailscale network (`Network=container:tailscale`) and are accessible via Traefik at `https://<service>.your-tailnet.ts.net`.
 
-- **Traefik** (User) - Reverse proxy
-  - Quadlet: `traefik.container`
-  - Port: 80/443
-  - URL: `traefik:8080`
+| Service | Type | Description | Quadlet | Port | URL |
+|---------|------|-------------|---------|------|-----|
+| **Tailscale** | User | VPN mesh networking | `tailscale.container` | - | - |
+| **Hermes Agent** | User | Local AI inference (Nous) | `hermes-agent.container` | 8000 | `https://hermes.tailnet.ts.net` |
+| **Vaultwarden** | User | Password manager | `vaultwarden.container` | 80 | `https://vault.tailnet.ts.net` |
+| **Ntfy** | User | Push notifications | `ntfy.container` | 80 | `https://ntfy.tailnet.ts.net` |
+| **Glance** | User | Dashboard | `glance.container` | 8080 | `https://glance.tailnet.ts.net` |
+| **Karakeep** | User | Bookmark manager | `karakeep.container` | 3000 | `https://karakeep.tailnet.ts.net` |
+| **SearXNG** | User | Privacy search engine | `searxng.container` | 8080 | `https://search.tailnet.ts.net` |
 
-- **Hermes Agent** (User) - Local AI inference
-  - Quadlet: `hermes-agent.container`
-  - Port: 8000
-  - URL: `hermes`
+### Cluster Services (k0s Kubernetes)
 
-- **Vaultwarden** (User) - Password manager
-  - Quadlet: `vaultwarden.container`
-  - Port: 80
-  - URL: `vault`
-
-- **Ntfy** (User) - Push notifications
-  - Quadlet: `ntfy.container`
-  - Port: 80
-  - URL: `ntfy`
-
-- **Glance** (User) - Dashboard
-  - Quadlet: `glance.container`
-  - Port: 8080
-  - URL: `glance`
-
-- **Karakeep** (User) - Bookmark manager
-  - Quadlet: `karakeep.container`
-  - Port: 3000
-  - URL: `karakeep`
-
-- **SearXNG** (User) - Privacy search
-  - Quadlet: `searxng.container`
-  - Port: 8080
-  - URL: `search`
-
-- **Prometheus** (User) - Metrics collection
-  - Quadlet: `prometheus.container`
-  - Port: 9090
-  - URL: `prometheus`
+| Service | Type | Description | Deployment | Port | URL |
+|---------|------|-------------|------------|------|-----|
+| **Traefik** | k0s | Ingress controller | DaemonSet (hostPort 80/443) | 80/443 | `https://traefik.tailnet.ts.net:8080` |
+| **Prometheus** | k0s | Metrics collection | StatefulSet (Helm) | 9090 | `https://prometheus.tailnet.ts.net` |
+| **Grafana** | k0s | Dashboards | Deployment (Helm) | 80 | `https://grafana.tailnet.ts.net` |
+| **Alertmanager** | k0s | Alert routing | StatefulSet (Helm) | 9093 | `https://alertmanager.tailnet.ts.net` |
 
 ## Tailscale Integration
 
-Each service quadlet uses `Network=container:tailscale` to join the
-Tailscale container's network namespace. This provides:
+Each Podman Quadlet service uses `Network=container:tailscale` to join the Tailscale container's network namespace. This provides:
 
-- **Zero-config networking** - Services auto-discover each other
-  via container names
+- **Zero-config networking** - Services auto-discover each other via container names
 - **Secure by default** - No ports exposed to host, only via Tailscale
 - **Mesh VPN** - Access from any device on your tailnet
 - **MagicDNS** - Use `service-name.tailnet.ts.net` for routing
 
 ### Tailscale Configuration
 
-The Tailscale quadlet advertises routes for your local subnet and
-accepts routes from other nodes:
+The Tailscale quadlet advertises routes for your local subnet and accepts routes from other nodes:
 
 ```ini
 Environment=TS_EXTRA_ARGS=--accept-routes --advertise-routes=192.168.1.0/24
@@ -176,33 +189,62 @@ Environment=TS_EXTRA_ARGS=--accept-routes --advertise-routes=192.168.1.0/24
 
 Adjust `--advertise-routes` to match your LAN subnet.
 
+### k0s ↔ Tailscale Bridge
+
+k0s services connect to Tailscale services via `ExternalName` Services:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-agent
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: hermes-agent.tailnet.ts.net
+  ports:
+    - port: 8000
+      targetPort: 8000
+```
+
+This allows Prometheus (in k0s) to scrape `hermes-agent:8000/metrics` and Traefik to route `hermes.tailnet.ts.net` → `hermes-agent:8000`.
+
 ## Management
 
-- [Managing Quadlets](docs/managing-quadlets.md) - Deploy, update,
-  debug, and monitor services
-- [Managing Repository](docs/managing-repo.md) - Git workflow,
-  contributing, releases
+- [Managing Quadlets](docs/managing-quadlets.md) - Deploy, update, debug, and monitor services
+- [Managing Repository](docs/managing-repo.md) - Git workflow, contributing, releases
 - [Renovate Bot](docs/renovate.md) - Automated dependency updates
 
 ## Adding New Services
 
+### Application Service (Podman Quadlet)
+
 1. Create quadlet in `quadlets/user/` with `Network=container:tailscale`
 2. Create `.env.example` with documented variables
-3. Add Traefik route in `quadlets/user/traefik/dynamic.yml`
-4. Add Prometheus scrape config in `quadlets/user/prometheus/prometheus.yml`
+3. Add Traefik IngressRoute in `k0s/manifests/traefik-ingressroutes.yaml`
+4. Add ServiceMonitor in `k0s/manifests/prometheus-servicemonitors.yaml`
 5. Add Glance widget in `quadlets/user/glance/glance.yml`
 6. Update `renovate.json` with package rules
 7. Update this README services table
 8. Test deployment locally
 
+### Cluster Service (k0s Manifest)
+
+1. Create manifest in `k0s/manifests/`
+2. Add to `k0s/config/k0s.yaml` if using Helm
+3. Update `renovate.json` for image updates
+4. Apply with `kubectl apply -f k0s/manifests/`
+
 ## Security
 
-- All containers run rootless (no root privileges)
+- All Podman containers run rootless (no root privileges)
+- k0s control plane runs as systemd service (root required for k0s)
 - Secrets managed via environment files (not committed to Git)
 - Images pinned by digest (SHA256) for supply chain security
 - Renovate updates hashes automatically via PR
 - Tailscale provides encrypted mesh networking
-- No public port exposure required
+- No public port exposure required (only via Tailscale)
+- Traefik TLS termination at ingress
 
 ## License
 
