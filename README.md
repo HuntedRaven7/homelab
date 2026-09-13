@@ -53,29 +53,29 @@ homelab/
 │                              TAILSCALE MESH                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   ┌─────────────────────────┐         ┌─────────────────────────────────┐  │
-│   │   Podman Quadlets       │         │          k0s Cluster            │  │
-│   │   (Rootless, User)      │         │      (System-level)             │  │
-│   ├─────────────────────────┤         ├─────────────────────────────────┤  │
-│   │                         │         │                                 │  │
-│   │  • Tailscale            │         │  • Traefik (DaemonSet)          │  │
-│   │  • Hermes Agent         │         │     - Ingress Controller        │  │
-│   │  • Vaultwarden          │         │     - TLS Termination           │  │
-│   │  • Ntfy                 │         │     - hostPort 80/443           │  │
-│   │  • Glance               │         │                                 │  │
-│   │  • Karakeep             │         │  • Prometheus Stack (Helm)      │  │
-│   │  • SearXNG              │         │     - Prometheus + Alertmanager │  │
-│   │                         │         │     - Grafana                   │  │
-│   │                         │         │     - ServiceMonitors + Rules   │  │
-│   └──────────────┬──────────┘         └───────────────┬────────────────┘  │
-│                  │                                    │                   │
-│                  │        ExternalName Services       │                   │
-│                  └────────────────┬───────────────────┘                   │
-│                                   │                                       │
-│              ┌────────────────────┴────────────────────┐                  │
-│              │     Tailscale MagicDNS Resolution       │                  │
-│              │  service.tailnet.ts.net → 100.x.y.z     │                  │
-│              └─────────────────────────────────────────┘                  │
+│   ┌─────────────────────────┐         ┌─────────────────────────────────┐   │
+│   │   Podman Quadlets       │         │          k0s Cluster            │   │
+│   │   (Rootless, User)      │         │      (System-level)             │   │
+│   ├─────────────────────────┤         ├─────────────────────────────────┤   │
+│   │                         │         │                                 │   │
+│   │  • Tailscale            │         │  • Traefik (DaemonSet)          │   │
+│   │  • Hermes Agent         │         │     - Ingress Controller        │   │
+│   │  • Vaultwarden          │         │     - TLS Termination           │   │
+│   │  • Ntfy                 │         │     - hostPort 80/443           │   │
+│   │  • Glance               │         │                                 │   │
+│   │  • Karakeep             │         │  • Prometheus Stack (Helm)      │   │
+│   │  • SearXNG              │         │     - Prometheus + Alertmanager │   │
+│   │                         │         │     - Grafana                   │   │
+│   │                         │         │     - ServiceMonitors + Rules   │   │
+│   └──────────────┬──────────┘         └───────────────┬─────────────────┘   │
+│                  │                                    │                     │
+│                  │        ExternalName Services       │                     │
+│                  └────────────────┬───────────────────┘                     │
+│                                   │                                         │
+│              ┌────────────────────┴────────────────────┐                    │
+│              │     Tailscale MagicDNS Resolution       │                    │
+│              │  service.tailnet.ts.net → 100.x.y.z     │                    │
+│              └─────────────────────────────────────────┘                    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
