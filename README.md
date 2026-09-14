@@ -98,7 +98,7 @@ homelab/
 │  │  └─────────────────────────────────────────────────────────────┘   │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
-│  Ingress: service.tailnet.ts.net → Traefik (hostPort 80/443) → Service   │
+│  Ingress: service.bluebuck-rudd.ts.net → Traefik (hostPort 80/443) → Service   │
 │  Metrics: Prometheus → ServiceMonitor → Service → Pod                    │
 │  GitOps:  Argo CD watches Git → Applies manifests to cluster             │
 └─────────────────────────────────────────────────────────────────────────────┘
