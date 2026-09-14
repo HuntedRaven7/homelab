@@ -148,22 +148,3 @@ spec:
       name: metrics
   selector:
     app: ntfy
----
-# IngressRoute for Traefik
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: ntfy
-  namespace: homelab
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`ntfy.tailnet.ts.net`)
-      kind: Rule
-      services:
-        - name: ntfy
-          port: 80
-      middlewares:
-        - name: security-headers
-          namespace: kube-system

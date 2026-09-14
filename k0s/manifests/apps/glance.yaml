@@ -135,22 +135,3 @@ spec:
       name: http
   selector:
     app: glance
----
-# IngressRoute for Traefik
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: glance
-  namespace: homelab
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`glance.tailnet.ts.net`)
-      kind: Rule
-      services:
-        - name: glance
-          port: 8080
-      middlewares:
-        - name: security-headers
-          namespace: kube-system

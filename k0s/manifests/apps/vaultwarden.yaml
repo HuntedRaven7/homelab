@@ -159,22 +159,3 @@ spec:
       name: websocket
   selector:
     app: vaultwarden
----
-# IngressRoute for Traefik
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: vaultwarden
-  namespace: homelab
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`vault.tailnet.ts.net`)
-      kind: Rule
-      services:
-        - name: vaultwarden
-          port: 80
-      middlewares:
-        - name: security-headers
-          namespace: kube-system
