@@ -1,12 +1,5 @@
 ---
-# Argo CD Namespace and RBAC
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: argocd
-  labels:
-    name: argocd
----
+# Argo CD RBAC and Apps
 apiVersion: v1
 kind: ServiceAccount
 metadata:
