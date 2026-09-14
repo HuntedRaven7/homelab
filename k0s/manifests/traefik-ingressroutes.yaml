@@ -5,19 +5,6 @@
 # TAILNET_DOMAIN placeholder is replaced at deploy time from SOPS encrypted file
 
 ---
-# Tailscale ExternalName Service (for accessing tailscale from cluster)
-apiVersion: v1
-kind: Service
-metadata:
-  name: tailscale
-  namespace: homelab
-spec:
-  type: ExternalName
-  externalName: tailscale.${TAILNET_DOMAIN}
-  ports:
-    - port: 80
-      targetPort: 80
----
 # Hermes Agent IngressRoute
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -37,22 +24,6 @@ spec:
       middlewares:
         - name: security-headers
           namespace: kube-system
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: hermes-agent
-  namespace: homelab
-  labels:
-    app: hermes-agent
-spec:
-  type: ClusterIP
-  ports:
-    - port: 8000
-      targetPort: 8000
-      name: http
-  selector:
-    app: hermes-agent
 ---
 # Vaultwarden IngressRoute
 apiVersion: traefik.io/v1alpha1
@@ -74,25 +45,6 @@ spec:
         - name: security-headers
           namespace: kube-system
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: vaultwarden
-  namespace: homelab
-  labels:
-    app: vaultwarden
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-      targetPort: 80
-      name: http
-    - port: 3012
-      targetPort: 3012
-      name: websocket
-  selector:
-    app: vaultwarden
----
 # Ntfy IngressRoute
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -112,28 +64,6 @@ spec:
       middlewares:
         - name: security-headers
           namespace: kube-system
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ntfy
-  namespace: homelab
-  labels:
-    app: ntfy
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-      targetPort: 80
-      name: http
-    - port: 8081
-      targetPort: 8081
-      name: manager
-    - port: 9090
-      targetPort: 9090
-      name: metrics
-  selector:
-    app: ntfy
 ---
 # Glance IngressRoute
 apiVersion: traefik.io/v1alpha1
@@ -155,22 +85,6 @@ spec:
         - name: security-headers
           namespace: kube-system
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: glance
-  namespace: homelab
-  labels:
-    app: glance
-spec:
-  type: ClusterIP
-  ports:
-    - port: 8080
-      targetPort: 8080
-      name: http
-  selector:
-    app: glance
----
 # Karakeep IngressRoute
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -190,22 +104,6 @@ spec:
       middlewares:
         - name: security-headers
           namespace: kube-system
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: karakeep
-  namespace: homelab
-  labels:
-    app: karakeep
-spec:
-  type: ClusterIP
-  ports:
-    - port: 3000
-      targetPort: 3000
-      name: http
-  selector:
-    app: karakeep
 ---
 # SearXNG IngressRoute
 apiVersion: traefik.io/v1alpha1
@@ -227,23 +125,7 @@ spec:
         - name: security-headers
           namespace: kube-system
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: searxng
-  namespace: homelab
-  labels:
-    app: searxng
-spec:
-  type: ClusterIP
-  ports:
-    - port: 8080
-      targetPort: 8080
-      name: http
-  selector:
-    app: searxng
----
-# Prometheus IngressRoute (from k0s monitoring)
+# Prometheus IngressRoute
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
