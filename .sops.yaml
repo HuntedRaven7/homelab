@@ -3,9 +3,10 @@
 
 creation_rules:
   # Encrypt all .yaml files in .sops/ with age
+  # Encrypt all string values (not just data/stringData)
   - path_regex: \.sops/.*\.yaml$
     age: "age1e45ke8t9tc9ke0u8ajk2cfnjv4xxh6q3569077q8smpku8gwxusqcpawul"
-    encrypted_regex: "^(data|stringData)$"
+    encrypted_regex: "^(data|stringData|tailnet_domain)$"
 
   # Encrypt specific secret files in manifests
   - path_regex: k0s/manifests/apps/.*\.yaml$
