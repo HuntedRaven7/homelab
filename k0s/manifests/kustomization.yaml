@@ -135,17 +135,3 @@ replacements:
           labelSelector: traefik.io/ingress-class=traefik
         fieldPaths:
           - spec.routes[0].services[0].namespace
-  # Replace TAILNET_DOMAIN placeholder in IngressRoute host rules
-  - source:
-      kind: ConfigMap
-      name: tailnet-config
-      fieldPath: data.TAILNET_DOMAIN
-    targets:
-      - select:
-          kind: IngressRoute
-        fieldPaths:
-          - spec.routes[0].match
-      options:
-        delimiter: ""
-        regex: 'Host\(`([^`]+)`\)'
-        replace: 'Host(`$1.TAILNET_DOMAIN`)'
