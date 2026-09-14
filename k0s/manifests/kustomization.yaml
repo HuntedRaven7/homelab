@@ -38,9 +38,6 @@ commonLabels:
 commonAnnotations:
   homelab.io/version: "1.0.0"
 
-# Namespace to deploy resources without explicit namespace
-namespace: homelab
-
 # Images (can be overridden by renovate)
 images:
   - name: tailscale/tailscale
