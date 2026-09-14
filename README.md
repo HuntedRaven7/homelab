@@ -60,32 +60,30 @@ homelab/
 
 ### Kubernetes Architecture
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                  TAILSCALE MESH NETWORK                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌───────────────────────────────────────────────────────┐ │
-│  │              k0s CLUSTER                              │ │
-│  │  ┌─────────────────┐  ┌────────────────────────────┐ │ │
-│  │  │  Control Plane  │  │     Workloads              │ │ │
-│  │  │  k0s API/Controller│  • Tailscale (DaemonSet)   │ │ │
-│  │  │  /Scheduler      │  • Hermes Agent             │ │ │
-│  │  │                  │  • Vaultwarden               │ │ │
-│  │  └─────────────────┘  • Ntfy                       │ │ │
-│  │                        • Glance                     │ │ │
-│  │                        • Karakeep                   │ │ │
-│  │                        • SearXNG                    │ │ │
-│  │                        • Traefik (Ingress)          │ │ │
-│  │                        • Prometheus + Alertmanager  │ │ │
-│  │                        • Grafana                    │ │ │
-│  │                        • Argo CD                    │ │ │
-│  │  └──────────────────────────────────────────────┘ │ │
-│  └─────────────────────────────────────────────────────┘ │
-│                                                             │
-│  Ingress: service.bluebuck-rudd.ts.net -> Traefik -> Service │
+```
+┌──────────────────────────────────────────────────────────────┐
+│                  TAILSCALE MESH NETWORK                      │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │                    k0s CLUSTER                         │ │
+│  │                                                        │ │
+│  │  Control Plane:                                        │ │
+│  │  - k0s API, Controller, Scheduler                     │ │
+│  │                                                        │ │
+│  │  Workloads (homelab namespace):                        │ │
+│  │  - Tailscale (DaemonSet)                               │ │
+│  │  - Hermes Agent, Vaultwarden, Ntfy, Glance            │ │
+│  │  - Karakeep, SearXNG                                   │ │
+│  │  - Traefik (Ingress, hostPort 80/443)                  │ │
+│  │  - Prometheus, Alertmanager, Grafana                   │ │
+│  │  - Argo CD                                             │ │
+│  │                                                        │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  Ingress: service.bluebuck-rudd.ts.net -> Traefik -> Service│
 │  GitOps:   Argo CD watches Git -> Applies manifests        │
-└─────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Start
