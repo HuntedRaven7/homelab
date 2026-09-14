@@ -7,8 +7,9 @@
 ~/.config/containers/*.env
 quadlets/**/*.env
 
-# SOPS age keys (NEVER commit private keys)
+# SOPS age keys and decrypted files (NEVER commit)
 .sops/age.key
+.sops/*.dec.yaml
 *.age.key
 
 # Systemd
