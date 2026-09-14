@@ -60,25 +60,7 @@ images:
   - name: traefik
     newTag: v3.0.0
 
-# ConfigMap generators (for environment-specific configs)
-configMapGenerator:
-  - name: ntfy-config
-    behavior: merge
-    files:
-      - server.yml=k0s/manifests/apps/ntfy-config.yml
-  - name: glance-config
-    behavior: merge
-    files:
-      - glance.yml=k0s/manifests/apps/glance-config.yml
-  - name: searxng-config
-    behavior: merge
-    files:
-      - settings.yml=k0s/manifests/apps/searxng-config.yml
-  # Tailnet domain ConfigMap - populated from decrypted SOPS file at deploy time
-  - name: tailnet-config
-    behavior: merge
-    literals:
-      - TAILNET_DOMAIN=bluebuck-rudd.ts.net  # PLACEHOLDER - replaced by deploy script
+# ConfigMaps are defined inline in the app manifests (apps/*.yaml)
 
 # Secret generators (for environment-specific secrets)
 # These should be created manually or via external-secrets operator
