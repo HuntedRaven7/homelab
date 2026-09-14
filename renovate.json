@@ -29,46 +29,6 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^quadlets/.*\\.container$"],
-      "matchStrings": [
-        "Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)@sha256:(?<currentDigest>[a-f0-9]+)"
-      ],
-      "depNameTemplate": "{{depName}}",
-      "datasourceTemplate": "docker",
-      "registryUrlTemplate": "https://index.docker.io",
-      "versioningTemplate": "docker"
-    },
-    {
-      "customType": "regex",
-      "fileMatch": ["^quadlets/.*\\.container$"],
-      "matchStrings": ["Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)"],
-      "depNameTemplate": "{{depName}}",
-      "datasourceTemplate": "docker",
-      "registryUrlTemplate": "https://index.docker.io",
-      "versioningTemplate": "docker"
-    },
-    {
-      "customType": "regex",
-      "fileMatch": ["^quadlets/karakeep\\.container$"],
-      "matchStrings": [
-        "Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)@sha256:(?<currentDigest>[a-f0-9]+)"
-      ],
-      "depNameTemplate": "{{depName}}",
-      "datasourceTemplate": "docker",
-      "registryUrlTemplate": "https://ghcr.io",
-      "versioningTemplate": "docker"
-    },
-    {
-      "customType": "regex",
-      "fileMatch": ["^quadlets/karakeep\\.container$"],
-      "matchStrings": ["Image=(?<depName>[^:]+):(?<currentValue>[^@\\s]+)"],
-      "depNameTemplate": "{{depName}}",
-      "datasourceTemplate": "docker",
-      "registryUrlTemplate": "https://ghcr.io",
-      "versioningTemplate": "docker"
-    },
-    {
-      "customType": "regex",
       "fileMatch": ["^k0s/config/k0s\\.yaml$"],
       "matchStrings": [
         "name: traefik/traefik\\n\\s+version: \"(?<currentValue>[^\"]+)\""
@@ -110,12 +70,78 @@
       "datasourceTemplate": "docker",
       "registryUrlTemplate": "https://index.docker.io",
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/manifests/apps/.*\\.yaml$"],
+      "matchStrings": [
+        "image: (?<depName>[^:]+):(?<currentValue>[^@\\s]+)@sha256:(?<currentDigest>[a-f0-9]+)"
+      ],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/manifests/apps/.*\\.yaml$"],
+      "matchStrings": [
+        "image: (?<depName>[^:]+):(?<currentValue>[^@\\s]+)"
+      ],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/manifests/apps/karakeep\\.yaml$"],
+      "matchStrings": [
+        "image: (?<depName>[^:]+):(?<currentValue>[^@\\s]+)@sha256:(?<currentDigest>[a-f0-9]+)"
+      ],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://ghcr.io",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/manifests/apps/karakeep\\.yaml$"],
+      "matchStrings": [
+        "image: (?<depName>[^:]+):(?<currentValue>[^@\\s]+)"
+      ],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://ghcr.io",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/manifests/apps/tailscale\\.yaml$"],
+      "matchStrings": [
+        "image: (?<depName>[^:]+):(?<currentValue>[^@\\s]+)@sha256:(?<currentDigest>[a-f0-9]+)"
+      ],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^k0s/manifests/apps/tailscale\\.yaml$"],
+      "matchStrings": [
+        "image: (?<depName>[^:]+):(?<currentValue>[^@\\s]+)"
+      ],
+      "depNameTemplate": "{{depName}}",
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "versioningTemplate": "docker"
     }
   ],
   "packageRules": [
     {
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/tailscale.container"],
+      "matchFileNames": ["**/apps/tailscale.yaml"],
       "groupName": "tailscale",
       "automerge": true,
       "automergeType": "pr",
@@ -130,7 +156,7 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/hermes-agent.container"],
+      "matchFileNames": ["**/apps/hermes-agent.yaml"],
       "groupName": "hermes-agent",
       "automerge": true
     },
@@ -142,19 +168,19 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/traefik.container"],
+      "matchFileNames": ["**/traefik-deployment.yaml"],
       "groupName": "traefik",
       "automerge": true
     },
     {
       "matchManagers": ["custom.regex"],
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["library/traefik"],
+      "matchPackageNames": ["traefik/traefik"],
       "pinDigests": true
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/vaultwarden.container"],
+      "matchFileNames": ["**/apps/vaultwarden.yaml"],
       "groupName": "vaultwarden",
       "automerge": true
     },
@@ -166,19 +192,7 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/prometheus.container"],
-      "groupName": "prometheus",
-      "automerge": true
-    },
-    {
-      "matchManagers": ["custom.regex"],
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["prom/prometheus"],
-      "pinDigests": true
-    },
-    {
-      "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/ntfy.container"],
+      "matchFileNames": ["**/apps/ntfy.yaml"],
       "groupName": "ntfy",
       "automerge": true
     },
@@ -190,7 +204,7 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/glance.container"],
+      "matchFileNames": ["**/apps/glance.yaml"],
       "groupName": "glance",
       "automerge": true
     },
@@ -202,7 +216,7 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/karakeep.container"],
+      "matchFileNames": ["**/apps/karakeep.yaml"],
       "groupName": "karakeep",
       "automerge": true
     },
@@ -214,7 +228,7 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/searxng.container"],
+      "matchFileNames": ["**/apps/searxng.yaml"],
       "groupName": "searxng",
       "automerge": true
     },
@@ -237,18 +251,6 @@
       "pinDigests": false
     },
     {
-      "matchManagers": ["custom.regex"],
-      "matchFileNames": ["**/traefik-deployment.yaml"],
-      "groupName": "traefik-image",
-      "automerge": true
-    },
-    {
-      "matchManagers": ["custom.regex"],
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["traefik/traefik"],
-      "pinDigests": true
-    },
-    {
       "matchUpdateTypes": ["major"],
       "automerge": false,
       "labels": ["major-update"]
@@ -262,6 +264,7 @@
     "**/*.env.example",
     "**/*.md",
     "docs/**",
-    "scripts/**"
+    "scripts/**",
+    ".sops/**"
   ]
 }

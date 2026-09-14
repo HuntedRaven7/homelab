@@ -7,31 +7,31 @@ on:
     branches: [main]
 
 jobs:
-  validate-quadlets:
-    name: Validate Quadlets
+  validate-k0s-manifests:
+    name: Validate k0s Manifests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Podman
+      - name: Install kubectl and kustomize
         run: |
-          sudo apt-get update
-          sudo apt-get install -y podman
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
 
-      - name: Validate quadlet syntax
+      - name: Validate kustomize build
         run: |
-          for quadlet in quadlets/**/*.container; do
-            if [[ -f "$quadlet" ]]; then
-              echo "Validating $quadlet"
-              podman-quadlet --dry-run "$quadlet" 2>/dev/null || true
-            fi
-          done
+          echo "Validating k0s manifests with kustomize..."
+          kustomize build k0s/manifests > /dev/null
+          echo "kustomize build successful"
 
       - name: Check image references
         run: |
-          echo "Checking image references in quadlets..."
-          grep -r "^Image=" quadlets/ | while IFS= read -r line; do
+          echo "Checking image references in k0s manifests..."
+          grep -r "image:" k0s/manifests/apps/ | grep -v "^#" | while IFS= read -r line; do
             echo "Found: $line"
           done
 
@@ -64,4 +64,4 @@ jobs:
         run: npm install -g markdownlint-cli
 
       - name: Lint markdown files
-        run: markdownlint "**/*.md" --ignore node_modules
+        run: markdownlint "**/*.md" --ignore node_modules --config .markdownlint.json

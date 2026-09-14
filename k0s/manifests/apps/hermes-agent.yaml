@@ -1,0 +1,104 @@
+---
+# Hermes Agent - Nous Research Local AI Inference
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hermes-agent-secrets
+  namespace: homelab
+type: Opaque
+stringData:
+  # Fill in with your API key
+  HERMES_API_KEY: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-agent
+  namespace: homelab
+  labels:
+    app: hermes-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hermes-agent
+  template:
+    metadata:
+      labels:
+        app: hermes-agent
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: hermes-agent
+          image: nousresearch/hermes-agent:latest@sha256:72767f869d46c45de84e7c3879b698a81a913c9fd2c515c18697c2ff9bdaf4d0
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: HERMES_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-agent-secrets
+                  key: HERMES_API_KEY
+                  optional: true
+            - name: HERMES_MODEL
+              value: "hermes-3-llama-3.1-8b"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "4Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "2000m"
+              memory: "8Gi"
+              nvidia.com/gpu: "1"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-agent
+  namespace: homelab
+  labels:
+    app: hermes-agent
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+  selector:
+    app: hermes-agent
+---
+# IngressRoute for Traefik
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: hermes-agent
+  namespace: homelab
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`hermes.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: hermes-agent
+          port: 8000
+      middlewares:
+        - name: security-headers
+          namespace: kube-system

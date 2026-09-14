@@ -1,0 +1,182 @@
+---
+# Tailscale - Runs as DaemonSet with hostNetwork for mesh VPN
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tailscale
+  namespace: homelab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tailscale
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/status"]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tailscale
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tailscale
+subjects:
+  - kind: ServiceAccount
+    name: tailscale
+    namespace: homelab
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tailscale-auth
+  namespace: homelab
+type: Opaque
+stringData:
+  # Fill in with: kubectl create secret generic tailscale-auth -n homelab --from-literal=authkey=tskey-auth-xxx --dry-run=client -o yaml | kubectl apply -f -
+  authkey: ""
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: tailscale
+  namespace: homelab
+  labels:
+    app: tailscale
+spec:
+  selector:
+    matchLabels:
+      app: tailscale
+  template:
+    metadata:
+      labels:
+        app: tailscale
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9091"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: tailscale
+      hostNetwork: true
+      hostPID: true
+      dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+        - name: setup-tun
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mkdir -p /dev/net
+              if [ ! -c /dev/net/tun ]; then
+                mknod /dev/net/tun c 10 200
+              fi
+              chmod 600 /dev/net/tun
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["CAP_MKNOD", "CAP_SYS_ADMIN"]
+      containers:
+        - name: tailscale
+          image: tailscale/tailscale:v1.76.0@sha256:51fec4863144d6ba0a22504cfb455d020ee0307d0c04eb48f5afee63390bdba0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              mkdir -p /var/lib/tailscale
+              chmod 700 /var/lib/tailscale
+              # Start tailscaled in background
+              tailscaled --tun=userspace-networking --socket=/var/run/tailscale/tailscaled.sock --statedir=/var/lib/tailscale &
+              sleep 3
+              # Authenticate
+              if [ -n "${TAILSCALE_AUTH_KEY}" ]; then
+                tailscale up --authkey="${TAILSCALE_AUTH_KEY}" --hostname=$(hostname) --accept-routes --advertise-routes=192.168.1.0/24
+              else
+                echo "TAILSCALE_AUTH_KEY not set, skipping auth"
+                tailscale up --hostname=$(hostname) --accept-routes --advertise-routes=192.168.1.0/24
+              fi
+              # Keep running
+              tailscale status
+              sleep infinity
+          env:
+            - name: TAILSCALE_AUTH_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-auth
+                  key: authkey
+                  optional: true
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - CAP_NET_ADMIN
+                - CAP_SYS_MODULE
+                - CAP_DAC_OVERRIDE
+                - CAP_NET_RAW
+          volumeMounts:
+            - name: tailscale-state
+              mountPath: /var/lib/tailscale
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+            - name: run-tailscale
+              mountPath: /var/run/tailscale
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          livenessProbe:
+            exec:
+              command: ["tailscale", "status"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+      volumes:
+        - name: tailscale-state
+          persistentVolumeClaim:
+            claimName: tailscale-state
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: run-tailscale
+          hostPath:
+            path: /var/run/tailscale
+            type: DirectoryOrCreate
+---
+# Tailscale PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tailscale-state
+  namespace: homelab
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: tailscale-state
+---
+# Service for Tailscale metrics
+apiVersion: v1
+kind: Service
+metadata:
+  name: tailscale
+  namespace: homelab
+  labels:
+    app: tailscale
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9091
+      targetPort: 9091
+      name: metrics
+  selector:
+    app: tailscale

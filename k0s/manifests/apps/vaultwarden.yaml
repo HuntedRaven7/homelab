@@ -1,0 +1,180 @@
+---
+# Vaultwarden - Password Manager
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vaultwarden-secrets
+  namespace: homelab
+type: Opaque
+stringData:
+  # Generate with: openssl rand -base64 48
+  ADMIN_TOKEN: ""
+  # Optional: SMTP settings
+  # SMTP_HOST: ""
+  # SMTP_FROM: ""
+  # SMTP_PORT: "587"
+  # SMTP_SSL: "true"
+  # SMTP_USERNAME: ""
+  # SMTP_PASSWORD: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  namespace: homelab
+  labels:
+    app: vaultwarden
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vaultwarden
+  template:
+    metadata:
+      labels:
+        app: vaultwarden
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: vaultwarden
+          image: vaultwarden/server:latest@sha256:5d326778c22f063d093d6b0c9c766a28249561632266776f2c93132ab0ad3a80
+          ports:
+            - containerPort: 80
+              name: http
+            - containerPort: 3012
+              name: websocket
+          env:
+            - name: DOMAIN
+              value: "https://vault.tailnet.ts.net"
+            - name: ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-secrets
+                  key: ADMIN_TOKEN
+            - name: SIGNUPS_ALLOWED
+              value: "false"
+            - name: INVITATIONS_ALLOWED
+              value: "true"
+            - name: SHOW_PASSWORD_HINT
+              value: "false"
+            - name: LOG_LEVEL
+              value: "warn"
+            - name: EXTENDED_LOGGING
+              value: "false"
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-secrets
+                  key: SMTP_HOST
+                  optional: true
+            - name: SMTP_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-secrets
+                  key: SMTP_FROM
+                  optional: true
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-secrets
+                  key: SMTP_PORT
+                  optional: true
+            - name: SMTP_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-secrets
+                  key: SMTP_SSL
+                  optional: true
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-secrets
+                  key: SMTP_USERNAME
+                  optional: true
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-secrets
+                  key: SMTP_PASSWORD
+                  optional: true
+          volumeMounts:
+            - name: vaultwarden-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /alive
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: vaultwarden-data
+          persistentVolumeClaim:
+            claimName: vaultwarden-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vaultwarden-data
+  namespace: homelab
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: vaultwarden-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden
+  namespace: homelab
+  labels:
+    app: vaultwarden
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+    - port: 3012
+      targetPort: 3012
+      name: websocket
+  selector:
+    app: vaultwarden
+---
+# IngressRoute for Traefik
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: vaultwarden
+  namespace: homelab
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`vault.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: vaultwarden
+          port: 80
+      middlewares:
+        - name: security-headers
+          namespace: kube-system

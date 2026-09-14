@@ -1,6 +1,6 @@
 ---
-# ServiceMonitors for Homelab Services
-# These allow Prometheus (running in k0s) to scrape metrics from services on Tailscale
+# ServiceMonitors for Homelab Services (k0s native)
+# These allow Prometheus (running in k0s) to scrape metrics from services in homelab namespace
 
 ---
 # Traefik ServiceMonitor
@@ -37,26 +37,11 @@ spec:
       app: hermes-agent
   namespaceSelector:
     matchNames:
-      - default
+      - homelab
   endpoints:
     - port: http
       path: /metrics
       interval: 30s
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: hermes-agent
-  namespace: default
-  labels:
-    app: hermes-agent
-spec:
-  type: ExternalName
-  externalName: hermes-agent.tailnet.ts.net
-  ports:
-    - name: http
-      port: 8000
-      targetPort: 8000
 ---
 # Vaultwarden ServiceMonitor
 apiVersion: monitoring.coreos.com/v1
@@ -72,26 +57,11 @@ spec:
       app: vaultwarden
   namespaceSelector:
     matchNames:
-      - default
+      - homelab
   endpoints:
     - port: http
       path: /metrics
       interval: 30s
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: vaultwarden
-  namespace: default
-  labels:
-    app: vaultwarden
-spec:
-  type: ExternalName
-  externalName: vaultwarden.tailnet.ts.net
-  ports:
-    - name: http
-      port: 80
-      targetPort: 80
 ---
 # Ntfy ServiceMonitor
 apiVersion: monitoring.coreos.com/v1
@@ -107,26 +77,11 @@ spec:
       app: ntfy
   namespaceSelector:
     matchNames:
-      - default
+      - homelab
   endpoints:
-    - port: http
+    - port: metrics
       path: /metrics
       interval: 30s
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ntfy
-  namespace: default
-  labels:
-    app: ntfy
-spec:
-  type: ExternalName
-  externalName: ntfy.tailnet.ts.net
-  ports:
-    - name: http
-      port: 80
-      targetPort: 80
 ---
 # Glance ServiceMonitor
 apiVersion: monitoring.coreos.com/v1
@@ -142,26 +97,11 @@ spec:
       app: glance
   namespaceSelector:
     matchNames:
-      - default
+      - homelab
   endpoints:
     - port: http
       path: /metrics
       interval: 30s
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: glance
-  namespace: default
-  labels:
-    app: glance
-spec:
-  type: ExternalName
-  externalName: glance.tailnet.ts.net
-  ports:
-    - name: http
-      port: 8080
-      targetPort: 8080
 ---
 # Karakeep ServiceMonitor
 apiVersion: monitoring.coreos.com/v1
@@ -177,26 +117,11 @@ spec:
       app: karakeep
   namespaceSelector:
     matchNames:
-      - default
+      - homelab
   endpoints:
     - port: http
       path: /metrics
       interval: 30s
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: karakeep
-  namespace: default
-  labels:
-    app: karakeep
-spec:
-  type: ExternalName
-  externalName: karakeep.tailnet.ts.net
-  ports:
-    - name: http
-      port: 3000
-      targetPort: 3000
 ---
 # SearXNG ServiceMonitor
 apiVersion: monitoring.coreos.com/v1
@@ -212,26 +137,11 @@ spec:
       app: searxng
   namespaceSelector:
     matchNames:
-      - default
+      - homelab
   endpoints:
     - port: http
       path: /metrics
       interval: 30s
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: searxng
-  namespace: default
-  labels:
-    app: searxng
-spec:
-  type: ExternalName
-  externalName: searxng.tailnet.ts.net
-  ports:
-    - name: http
-      port: 8080
-      targetPort: 8080
 ---
 # Tailscale ServiceMonitor
 apiVersion: monitoring.coreos.com/v1
@@ -247,23 +157,28 @@ spec:
       app: tailscale
   namespaceSelector:
     matchNames:
-      - default
+      - homelab
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+---
+# Argo CD ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: argocd
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-server
+  namespaceSelector:
+    matchNames:
+      - argocd
   endpoints:
     - port: http
       path: /metrics
       interval: 30s
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: tailscale
-  namespace: default
-  labels:
-    app: tailscale
-spec:
-  type: ExternalName
-  externalName: tailscale.tailnet.ts.net
-  ports:
-    - name: http
-      port: 9091
-      targetPort: 9091

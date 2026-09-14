@@ -1,0 +1,169 @@
+---
+# Ntfy - Push Notification Server
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ntfy-secrets
+  namespace: homelab
+type: Opaque
+stringData:
+  # Optional: Base URL for web push
+  NTFY_BASE_URL: "https://ntfy.tailnet.ts.net"
+  # Optional: Auth file content (generate with: ntfy hash "password")
+  # auth.yml: |
+  #   users:
+  #     "admin":
+  #       password: "$2a$10$..."
+  #       roles: ["admin"]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ntfy-config
+  namespace: homelab
+data:
+  server.yml: |
+    base-url: "https://ntfy.tailnet.ts.net"
+    listen-http: ":80"
+    listen-https: ""
+    cache-file: "/var/cache/ntfy/cache.db"
+    attachment-cache-dir: "/var/cache/ntfy/attachments"
+    attachment-expiry: 72h
+    attachment-max-size: 50M
+    default-access: "read-write"
+    enable-login: false
+    enable-signup: false
+    manager:
+      enable: true
+      listen-http: ":8081"
+    metrics:
+      enable: true
+      listen-http: ":9090"
+    upstream-base-url: ""
+    web-root: "/web"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntfy
+  namespace: homelab
+  labels:
+    app: ntfy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ntfy
+  template:
+    metadata:
+      labels:
+        app: ntfy
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: ntfy
+          image: binwiederhier/ntfy:latest@sha256:f8060a494b69d53866ef505c36a205efcce3204618d6e183a87128cca6e7cac9
+          args: ["serve", "--config", "/etc/ntfy/server.yml"]
+          ports:
+            - containerPort: 80
+              name: http
+            - containerPort: 8081
+              name: manager
+            - containerPort: 9090
+              name: metrics
+          env:
+            - name: NTFY_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ntfy-secrets
+                  key: NTFY_BASE_URL
+                  optional: true
+          volumeMounts:
+            - name: ntfy-data
+              mountPath: /var/cache/ntfy
+            - name: ntfy-config
+              mountPath: /etc/ntfy
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: ntfy-data
+          persistentVolumeClaim:
+            claimName: ntfy-data
+        - name: ntfy-config
+          configMap:
+            name: ntfy-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ntfy-data
+  namespace: homelab
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: ntfy-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ntfy
+  namespace: homelab
+  labels:
+    app: ntfy
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+    - port: 8081
+      targetPort: 8081
+      name: manager
+    - port: 9090
+      targetPort: 9090
+      name: metrics
+  selector:
+    app: ntfy
+---
+# IngressRoute for Traefik
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ntfy
+  namespace: homelab
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`ntfy.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: ntfy
+          port: 80
+      middlewares:
+        - name: security-headers
+          namespace: kube-system

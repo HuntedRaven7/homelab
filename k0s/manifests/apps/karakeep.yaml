@@ -1,0 +1,165 @@
+---
+# Karakeep - Bookmark Manager
+apiVersion: v1
+kind: Secret
+metadata:
+  name: karakeep-secrets
+  namespace: homelab
+type: Opaque
+stringData:
+  # Generate with: openssl rand -base64 32
+  NEXTAUTH_SECRET: ""
+  # Optional: OAuth providers
+  # GITHUB_CLIENT_ID: ""
+  # GITHUB_CLIENT_SECRET: ""
+  # GOOGLE_CLIENT_ID: ""
+  # GOOGLE_CLIENT_SECRET: ""
+  # Optional: PostgreSQL (instead of SQLite)
+  # DATABASE_URL: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karakeep
+  namespace: homelab
+  labels:
+    app: karakeep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: karakeep
+  template:
+    metadata:
+      labels:
+        app: karakeep
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: karakeep
+          image: ghcr.io/karakeep-app/karakeep:latest@sha256:448e1385fc39f4a1e5ca59f2d7c1ed714a253de9915aabc0c21cf6c56a6771e5
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: DATABASE_URL
+              value: "file:/app/data/karakeep.db"
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: NEXTAUTH_SECRET
+            - name: NEXTAUTH_URL
+              value: "https://karakeep.tailnet.ts.net"
+            - name: NEXT_PUBLIC_APP_URL
+              value: "https://karakeep.tailnet.ts.net"
+            - name: TRUSTED_PROXY
+              value: "true"
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: GITHUB_CLIENT_ID
+                  optional: true
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: GITHUB_CLIENT_SECRET
+                  optional: true
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: GOOGLE_CLIENT_ID
+                  optional: true
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: GOOGLE_CLIENT_SECRET
+                  optional: true
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: karakeep-secrets
+                  key: DATABASE_URL
+                  optional: true
+          volumeMounts:
+            - name: karakeep-data
+              mountPath: /app/data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: karakeep-data
+          persistentVolumeClaim:
+            claimName: karakeep-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: karakeep-data
+  namespace: homelab
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: karakeep-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: karakeep
+  namespace: homelab
+  labels:
+    app: karakeep
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http
+  selector:
+    app: karakeep
+---
+# IngressRoute for Traefik
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: karakeep
+  namespace: homelab
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`karakeep.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: karakeep
+          port: 3000
+      middlewares:
+        - name: security-headers
+          namespace: kube-system

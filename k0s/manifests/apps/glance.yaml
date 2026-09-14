@@ -1,0 +1,156 @@
+---
+# Glance - Dashboard
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glance-config
+  namespace: homelab
+data:
+  glance.yml: |
+    pages:
+      - name: Home
+        columns:
+          - size: small
+            widgets:
+              - type: clock
+                format: 24h
+                timezone: local
+          - size: full
+            widgets:
+              - type: markdown
+                content: |
+                  # 🏠 Homelab Dashboard
+                  Welcome to your homelab overview.
+          - size: medium
+            widgets:
+              - type: traefik
+                url: http://traefik.kube-system:8080
+                title: Traefik
+          - size: medium
+            widgets:
+              - type: prometheus
+                url: http://prometheus.monitoring:9090
+                queries:
+                  - expr: up
+                    legend: Services Up
+          - size: medium
+            widgets:
+              - type: kubernetes
+                cluster: local
+                title: Cluster
+      - name: Services
+        columns:
+          - size: full
+            widgets:
+              - type: markdown
+                content: |
+                  ## Services Status
+                  All services running on k0s cluster via Tailscale mesh.
+          - size: medium
+            widgets:
+              - type: ping
+                hosts:
+                  - name: Hermes Agent
+                    host: hermes-agent.homelab:8000
+                  - name: Vaultwarden
+                    host: vaultwarden.homelab:80
+                  - name: Ntfy
+                    host: ntfy.homelab:80
+                  - name: Karakeep
+                    host: karakeep.homelab:3000
+                  - name: SearXNG
+                    host: searxng.homelab:8080
+                  - name: Prometheus
+                    host: prometheus.monitoring:9090
+                  - name: Traefik
+                    host: traefik.kube-system:8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glance
+  namespace: homelab
+  labels:
+    app: glance
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: glance
+  template:
+    metadata:
+      labels:
+        app: glance
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: glance
+          image: glanceapp/glance:latest@sha256:e71f219c5894dde27644daea2fc77984e20bcab0e54a71f8f845a3ed5a5f06f6
+          args: ["--config", "/app/config/glance.yml"]
+          ports:
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - name: glance-config
+              mountPath: /app/config
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: glance-config
+          configMap:
+            name: glance-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glance
+  namespace: homelab
+  labels:
+    app: glance
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app: glance
+---
+# IngressRoute for Traefik
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: glance
+  namespace: homelab
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`glance.tailnet.ts.net`)
+      kind: Rule
+      services:
+        - name: glance
+          port: 8080
+      middlewares:
+        - name: security-headers
+          namespace: kube-system

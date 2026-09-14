@@ -5,7 +5,8 @@
 set -euo pipefail
 
 K0S_VERSION="v1.30.0+k0s.0"
-K0S_CONFIG="/var/home/robin/git/personal/homelab/k0s/config/k0s.yaml"
+REPO_ROOT="/var/home/robin/git/personal/homelab"
+K0S_CONFIG="${REPO_ROOT}/k0s/config/k0s.yaml"
 
 echo "=== k0s Homelab Cluster Bootstrap ==="
 
@@ -43,27 +44,11 @@ kubectl --kubeconfig /var/lib/k0s/pki/admin.conf apply -f https://raw.githubuser
 # 7. Patch local-path as default storage class
 kubectl --kubeconfig /var/lib/k0s/pki/admin.conf patch storageclass local-path -p '{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}'
 
-# 8. Apply Traefik CRDs
-echo "Applying Traefik CRDs..."
-kubectl --kubeconfig /var/lib/k0s/pki/admin.conf apply -f /var/home/robin/git/personal/homelab/k0s/manifests/traefik-crds.yaml
+# 8. Deploy all manifests with SOPS decryption
+echo "Deploying homelab manifests (with SOPS decryption)..."
+"${REPO_ROOT}/scripts/deploy-k0s.sh"
 
-# 9. Apply Traefik deployment
-echo "Applying Traefik deployment..."
-kubectl --kubeconfig /var/lib/k0s/pki/admin.conf apply -f /var/home/robin/git/personal/homelab/k0s/manifests/traefik-deployment.yaml
-
-# 10. Apply IngressRoutes
-echo "Applying IngressRoutes..."
-kubectl --kubeconfig /var/lib/k0s/pki/admin.conf apply -f /var/home/robin/git/personal/homelab/k0s/manifests/traefik-ingressroutes.yaml
-
-# 11. Apply Prometheus ServiceMonitors
-echo "Applying Prometheus ServiceMonitors..."
-kubectl --kubeconfig /var/lib/k0s/pki/admin.conf apply -f /var/home/robin/git/personal/homelab/k0s/manifests/prometheus-servicemonitors.yaml
-
-# 12. Apply PrometheusRules
-echo "Applying PrometheusRules..."
-kubectl --kubeconfig /var/lib/k0s/pki/admin.conf apply -f /var/home/robin/git/personal/homelab/k0s/manifests/prometheus-rules.yaml
-
-# 13. Copy kubeconfig for user access
+# 9. Copy kubeconfig for user access
 echo "Setting up user kubeconfig..."
 mkdir -p ~/.kube
 sudo cp /var/lib/k0s/pki/admin.conf ~/.kube/config
@@ -76,13 +61,3 @@ echo ""
 echo "Verify cluster:"
 echo "  kubectl get nodes -o wide"
 echo "  kubectl get pods -A"
-echo ""
-echo "Access services via Traefik (ports 80/443 on host):"
-echo "  https://hermes.tailnet.ts.net"
-echo "  https://vault.tailnet.ts.net"
-echo "  https://ntfy.tailnet.ts.net"
-echo "  https://glance.tailnet.ts.net"
-echo "  https://karakeep.tailnet.ts.net"
-echo "  https://search.tailnet.ts.net"
-echo "  https://prometheus.tailnet.ts.net"
-echo "  https://grafana.tailnet.ts.net"

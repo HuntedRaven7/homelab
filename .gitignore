@@ -7,6 +7,10 @@
 ~/.config/containers/*.env
 quadlets/**/*.env
 
+# SOPS age keys (NEVER commit private keys)
+.sops/age.key
+*.age.key
+
 # Systemd
 *.service
 *.socket
@@ -28,3 +32,6 @@ Thumbs.db
 # Temporary
 *.tmp
 *.temp
+
+.kilo/
+

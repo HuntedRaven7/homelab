@@ -1,0 +1,27 @@
+# SOPS Configuration for Homelab
+# This file tells SOPS which keys to use for which files
+
+creation_rules:
+  # Encrypt all .yaml files in .sops/ with age
+  - path_regex: \.sops/.*\.yaml$
+    age: "age1e45ke8t9tc9ke0u8ajk2cfnjv4xxh6q3569077q8smpku8gwxusqcpawul"
+    encrypted_regex: "^(data|stringData)$"
+
+  # Encrypt specific secret files in manifests
+  - path_regex: k0s/manifests/apps/.*\.yaml$
+    age: "age1e45ke8t9tc9ke0u8ajk2cfnjv4xxh6q3569077q8smpku8gwxusqcpawul"
+    encrypted_regex: "^(data|stringData)$"
+
+  # Encrypt all secret files
+  - path_regex: .*secret.*\.yaml$
+    age: "age1e45ke8t9tc9ke0u8ajk2cfnjv4xxh6q3569077q8smpku8gwxusqcpawul"
+    encrypted_regex: "^(data|stringData)$"
+
+# Key groups for different environments (optional)
+# key_groups:
+#   - age:
+#       - age1e45ke8t9tc9ke0u8ajk2cfnjv4xxh6q3569077q8smpku8gwxusqcpawul
+#     gcp_kms: []
+#     azure_kv: []
+#     hc_vault: []
+#     pgp: []

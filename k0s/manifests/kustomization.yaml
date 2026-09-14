@@ -1,0 +1,151 @@
+# Kustomization for Homelab k0s Manifests
+# Apply with: kubectl apply -k k0s/manifests
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Common resources (namespaces, storage, PVs)
+resources:
+  - common.yaml
+
+# Infrastructure
+  - traefik-crds.yaml
+  - traefik-deployment.yaml
+  - traefik-ingressroutes.yaml
+
+# Monitoring
+  - prometheus-servicemonitors.yaml
+  - prometheus-rules.yaml
+
+# Argo CD
+  - argocd.yaml
+
+# Applications (homelab namespace)
+  - apps/tailscale.yaml
+  - apps/hermes-agent.yaml
+  - apps/vaultwarden.yaml
+  - apps/ntfy.yaml
+  - apps/glance.yaml
+  - apps/karakeep.yaml
+  - apps/searxng.yaml
+
+# Common labels
+commonLabels:
+  homelab.io/managed-by: kustomize
+  homelab.io/repository: github.com/yourusername/homelab
+
+# Common annotations
+commonAnnotations:
+  homelab.io/version: "1.0.0"
+
+# Namespace to deploy resources without explicit namespace
+namespace: homelab
+
+# Images (can be overridden by renovate)
+images:
+  - name: tailscale/tailscale
+    newTag: v1.76.0
+  - name: nousresearch/hermes-agent
+    newTag: latest
+  - name: vaultwarden/server
+    newTag: latest
+  - name: binwiederhier/ntfy
+    newTag: latest
+  - name: glanceapp/glance
+    newTag: latest
+  - name: ghcr.io/karakeep-app/karakeep
+    newTag: latest
+  - name: searxng/searxng
+    newTag: latest
+  - name: traefik
+    newTag: v3.0.0
+
+# ConfigMap generators (for environment-specific configs)
+configMapGenerator:
+  - name: ntfy-config
+    behavior: merge
+    files:
+      - server.yml=k0s/manifests/apps/ntfy-config.yml
+  - name: glance-config
+    behavior: merge
+    files:
+      - glance.yml=k0s/manifests/apps/glance-config.yml
+  - name: searxng-config
+    behavior: merge
+    files:
+      - settings.yml=k0s/manifests/apps/searxng-config.yml
+  # Tailnet domain ConfigMap - populated from decrypted SOPS file at deploy time
+  - name: tailnet-config
+    behavior: merge
+    literals:
+      - TAILNET_DOMAIN=bluebuck-rudd.ts.net  # PLACEHOLDER - replaced by deploy script
+
+# Secret generators (for environment-specific secrets)
+# These should be created manually or via external-secrets operator
+# secretGenerator:
+#   - name: tailscale-auth
+#     behavior: merge
+#     envs:
+#       - tailscale-auth.env
+#   - name: hermes-agent-secrets
+#     behavior: merge
+#     envs:
+#       - hermes-agent-secrets.env
+#   - name: vaultwarden-secrets
+#     behavior: merge
+#     envs:
+#       - vaultwarden-secrets.env
+#   - name: ntfy-secrets
+#     behavior: merge
+#     envs:
+#       - ntfy-secrets.env
+#   - name: karakeep-secrets
+#     behavior: merge
+#     envs:
+#       - karakeep-secrets.env
+#   - name: searxng-secrets
+#     behavior: merge
+#     envs:
+#       - searxng-secrets.env
+
+# Patches for environment-specific overrides
+patches:
+  # Example: Override replicas for production
+  # - patch: |-
+  #     apiVersion: apps/v1
+  #     kind: Deployment
+  #     metadata:
+  #       name: vaultwarden
+  #       namespace: homelab
+  #     spec:
+  #       replicas: 2
+  #   target:
+  #     kind: Deployment
+  #     labelSelector: app=vaultwarden
+
+# Replacements for cross-references
+replacements:
+  - source:
+      kind: Service
+      name: traefik
+      fieldPath: metadata.namespace
+    targets:
+      - select:
+          kind: IngressRoute
+          labelSelector: traefik.io/ingress-class=traefik
+        fieldPaths:
+          - spec.routes[0].services[0].namespace
+  # Replace TAILNET_DOMAIN placeholder in IngressRoute host rules
+  - source:
+      kind: ConfigMap
+      name: tailnet-config
+      fieldPath: data.TAILNET_DOMAIN
+    targets:
+      - select:
+          kind: IngressRoute
+        fieldPaths:
+          - spec.routes[0].match
+      options:
+        delimiter: ""
+        regex: 'Host\(`([^`]+)`\)'
+        replace: 'Host(`$1.TAILNET_DOMAIN`)'
