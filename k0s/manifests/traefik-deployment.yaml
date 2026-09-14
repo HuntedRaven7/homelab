@@ -3,11 +3,6 @@
 # Deploy as DaemonSet for hostPort 80/443
 
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: kube-system
----
-apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: traefik
