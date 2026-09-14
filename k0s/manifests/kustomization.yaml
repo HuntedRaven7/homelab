@@ -97,20 +97,7 @@ patches:
   #       name: vaultwarden
   #       namespace: homelab
   #     spec:
-  #       replicas: 2
-  #   target:
-  #     kind: Deployment
-  #     labelSelector: app=vaultwarden
-
-# Replacements for cross-references
-replacements:
-  - source:
-      kind: Service
-      name: traefik
-      fieldPath: metadata.namespace
-    targets:
-      - select:
-          kind: IngressRoute
-          labelSelector: traefik.io/ingress-class=traefik
-        fieldPaths:
-          - spec.routes[0].services[0].namespace
+#       replicas: 2
+#   target:
+#     kind: Deployment
+#     labelSelector: app=vaultwarden
