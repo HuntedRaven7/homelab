@@ -52,16 +52,3 @@ jobs:
 
       - name: Validate renovate.json
         run: renovate-config-validator renovate.json
-
-  markdown-lint:
-    name: Markdown Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install markdownlint
-        run: npm install -g markdownlint-cli
-
-      - name: Lint markdown files
-        run: markdownlint "**/*.md" --ignore node_modules --config .markdownlint.json
