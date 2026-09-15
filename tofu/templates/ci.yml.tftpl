@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-tofu:
+    name: Validate OpenTofu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install OpenTofu
+        run: |
+          wget -O /tmp/tofu.zip https://github.com/opentofu/opentofu/releases/download/v1.9.0/tofu_1.9.0_linux_amd64.zip
+          unzip /tmp/tofu.zip -d /usr/local/bin/
+          chmod +x /usr/local/bin/tofu
+
+      - name: tofu init
+        run: tofu init -input=false
+
+      - name: tofu validate
+        run: tofu validate
+
+  validate-k0s-manifests:
+    name: Validate k0s Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install kubectl and kustomize
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Validate kustomize build
+        run: |
+          echo "Validating k0s manifests with kustomize..."
+          kustomize build k0s/manifests > /dev/null
+          echo "kustomize build successful"
+
+      - name: Check image references
+        run: |
+          echo "Checking image references in k0s manifests..."
+          grep -r "image:" k0s/manifests/apps/ | grep -v "^#" | while IFS= read -r line; do
+            echo "Found: $line"
+          done
+
+  renovate-config:
+    name: Validate Renovate Config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Renovate
+        run: npm install -g renovate
+
+      - name: Validate renovate.json
+        run: renovate-config-validator renovate.json
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+
+      - name: Lint markdown files
+        run: markdownlint "**/*.md" --ignore node_modules --config .markdownlint.json

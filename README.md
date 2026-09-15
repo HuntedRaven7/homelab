@@ -81,7 +81,7 @@ homelab/
 │  │                                                                    │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                          │
-│ Ingress: service.bluebuck-rudd.ts.net -> Traefik -> Service              │
+│  Ingress: service.your-tailnet.ts.net -> Traefik -> Service              │
 │ GitOps:  Argo CD watches Git -> Applies manifests                        │
 │                                                                          │
 └────────────────────────────────────────────────────────────────────┘

@@ -1,0 +1,28 @@
+# Copy this file to tofu.tfvars and fill in your values
+# tofu apply -var-file=tofu.tfvars
+
+proxmox_url = "https://192.168.1.100:8001"
+proxmox_token = "YOUR-PROXMOX-API-TOKEN"
+proxmox_user = "root@pam"
+proxmox_verify_ssl = false
+
+tailscale_api_key = "YOUR-TAILSCALE-API-KEY"
+tailscale_tailnet = "your-tailnet"
+
+github_token = "YOUR-GITHUB-TOKEN"
+github_owner = "yourusername"
+github_repo = "homelab"
+
+ssh_public_key = "ssh-ed25519 AAAA... your-key"
+ssh_private_key_path = "~/.ssh/id_ed25519"
+
+k0s_version = "v1.30.0+k0s.0"
+node_count = 1
+node_cpu = 2
+node_memory = 4096
+node_disk = 50
+
+vm_template = "ubuntu-2204-cloud"
+vm_storage = "local-lvm"
+vm_bridge = "vmbr0"
+vm_location = "pve"

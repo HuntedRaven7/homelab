@@ -30,9 +30,13 @@ Thumbs.db
 # Logs
 *.log
 
-# Temporary
-*.tmp
-*.temp
+# OpenTofu state and secrets
+tofu/.tofu/
+tofu/*.tfstate
+tofu/*.tfstate.*
+tofu/.terraform/
+tofu/tofu.tfvars
+tofu/kubeconfig
 
 .kilo/
 
