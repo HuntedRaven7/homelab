@@ -101,6 +101,14 @@ podman_build_args() {
     grep -m1 '^build ' "${PODMAN_LOG}"
 }
 
+# The Justfile's own REPO_ORG default, which is the image vendor and the layer
+# cache namespace when nothing overrides it. Read it from the Justfile rather
+# than restating it, so a fork that renames its image vendor — step 2 of the
+# onboarding, which every fork does — does not have to edit these assertions.
+default_repo_org() {
+    sed -n 's/^export REPO_ORG := env("GITHUB_REPOSITORY_OWNER", "\([^"]*\)").*/\1/p' "${REPO_ROOT}/Justfile"
+}
+
 @test "build: derives a bare <fedora>.<date> version for the stable tag" {
     run_just build finpilot stable
     [ "$status" -eq 0 ]
@@ -200,7 +208,7 @@ podman_build_args() {
     local args
     args="$(podman_build_args)"
     [[ "${args}" == *"--build-arg IMAGE_NAME=finpilot"* ]]
-    [[ "${args}" == *"--build-arg IMAGE_VENDOR=projectbluefin"* ]]
+    [[ "${args}" == *"--build-arg IMAGE_VENDOR=$(default_repo_org)"* ]]
     [[ "${args}" == *"--build-arg UBLUE_IMAGE_TAG=stable"* ]]
     [[ "${args}" == *"--build-arg BASE_IMAGE_NAME=silverblue"* ]]
 }
@@ -320,14 +328,14 @@ podman_build_args() {
     [ "$status" -eq 0 ]
     local args
     args="$(podman_build_args)"
-    [[ "${args}" == *"--cache-from ghcr.io/projectbluefin/finpilot"* ]]
+    [[ "${args}" == *"--cache-from ghcr.io/$(default_repo_org)/finpilot"* ]]
     [[ "${args}" != *"--cache-to"* ]]
 }
 
 @test "build: writes the layer cache when REGISTRY_CACHE_WRITE=1" {
     REGISTRY_CACHE_WRITE=1 run_just build finpilot stable
     [ "$status" -eq 0 ]
-    [[ "$(podman_build_args)" == *"--cache-to ghcr.io/projectbluefin/finpilot"* ]]
+    [[ "$(podman_build_args)" == *"--cache-to ghcr.io/$(default_repo_org)/finpilot"* ]]
 }
 
 @test "build: skips cache args entirely when the cache ref is unreachable" {
