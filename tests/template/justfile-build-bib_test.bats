@@ -7,7 +7,7 @@
 # a machine can boot, and nothing exercised it. Its decisions are invisible
 # until an ISO is in a user's hands: an ISO built against the local build tag
 # gives the installed system a `bootc switch` origin pointing at
-# `localhost/finpilot`, which no host can ever pull an update from, and the
+# `localhost/homelab`, which no host can ever pull an update from, and the
 # recipe deliberately re-derives the published reference from the image's own
 # image-info.json to avoid exactly that. It also builds under `sudo podman run`
 # into a temporary directory inside the repository, so a failure that skips the
@@ -115,6 +115,14 @@ bib_run_args() {
     grep '^run ' "${PODMAN_LOG}" | grep -v 'image-info.json' | head -n1
 }
 
+# The Justfile's own IMAGE_NAME default, which `build-iso` and `build-qcow2`
+# compose into their `localhost/` build tag. Read it from the Justfile rather
+# than restating it, so a fork that renames its image — step 2 of the
+# onboarding, which every fork does — does not have to edit these assertions.
+default_image_name() {
+    sed -n 's/^export IMAGE_NAME := env("IMAGE_NAME", "\([^"]*\)").*/\1/p' "${REPO_ROOT}/Justfile"
+}
+
 @test "build-qcow2: passes the qcow2 type and the fixed BIB flags" {
     run_just build-qcow2
     [ "$status" -eq 0 ]
@@ -193,7 +201,7 @@ bib_run_args() {
     # BIB is given a reference that must resolve in local storage.
     run_just build-iso
     [ "$status" -eq 0 ]
-    grep -qF "tag localhost/finpilot:stable ghcr.io/projectbluefin/finpilot:stable" "${PODMAN_LOG}"
+    grep -qF "tag localhost/$(default_image_name):stable ghcr.io/projectbluefin/finpilot:stable" "${PODMAN_LOG}"
 }
 
 @test "build-qcow2 never reads image-info.json and never re-tags" {
@@ -205,7 +213,7 @@ bib_run_args() {
     [ "$status" -ne 0 ]
     run grep -q '^tag ' "${PODMAN_LOG}"
     [ "$status" -ne 0 ]
-    [[ "$(bib_run_args)" == *"localhost/finpilot:stable"* ]]
+    [[ "$(bib_run_args)" == *"localhost/$(default_image_name):stable"* ]]
 }
 
 @test "build-qcow2 honours an explicit target image and tag" {
