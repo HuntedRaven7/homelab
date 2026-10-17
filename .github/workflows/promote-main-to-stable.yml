@@ -36,7 +36,7 @@ concurrency:
 jobs:
   promote:
     name: Promote main to stable
-    uses: projectbluefin/actions/.github/workflows/reusable-promote-squash.yml@a52da5670b9337598cbc80c4d6a9a7b21e770aec # v1
+    uses: projectbluefin/actions/.github/workflows/reusable-promote-squash.yml@59f783ed76fd9d449ef6887a6649446801bd5434 # v1
     with:
       variants: >-
         [{"image":"${{ github.event.repository.name }}"}]
@@ -57,7 +57,7 @@ jobs:
       # `use_merge_queue`: `auto_merge` states how the PR is merged at all.
       # It defaults to true, so without this the body advertises an auto-merge
       # schedule (bluefin/dakota Tuesday, bluefin-lts Thursday) that never runs
-      # here — finpilot is a personal fork merged by hand. Operators waiting for
+      # here — homelab is a personal fork merged by hand. Operators waiting for
       # that auto-merge never see one, so set it false to match the manual merge
       # below. Enrollment stays governed separately by enqueue_promotion.
       auto_merge: false
@@ -250,7 +250,7 @@ jobs:
       issues: write
       packages: read
       pull-requests: write
-    uses: projectbluefin/actions/.github/workflows/reusable-release-gate.yml@a52da5670b9337598cbc80c4d6a9a7b21e770aec # v1
+    uses: projectbluefin/actions/.github/workflows/reusable-release-gate.yml@59f783ed76fd9d449ef6887a6649446801bd5434 # v1
     with:
       repo: ${{ github.repository }}
       pr_number: ${{ needs.locate-promotion-pr.outputs.pr_number }}

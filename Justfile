@@ -1,8 +1,8 @@
-export IMAGE_NAME := env("IMAGE_NAME", "finpilot")
+export IMAGE_NAME := env("IMAGE_NAME", "homelab")
 export DEFAULT_TAG := env("DEFAULT_TAG", "stable")
 export PODMAN := env("PODMAN", "podman")
-export REPO_ORG := env("GITHUB_REPOSITORY_OWNER", "projectbluefin")
-export bib_image := env("BIB_IMAGE", "ghcr.io/osbuild/bootc-image-builder:latest@sha256:2fad0f33293e9dac8eadd3d538cca078addb60d9ca3c2c40b8afa401278e86b0")
+export REPO_ORG := env("GITHUB_REPOSITORY_OWNER", "HuntedRaven7")
+export bib_image := env("BIB_IMAGE", "ghcr.io/osbuild/bootc-image-builder:latest@sha256:da9eec0092fed08858ad31e8ce5ed24548cf8095e61a983bf5ba457e30fa8fbf")
 export qemu_image := env("QEMU_IMAGE", "ghcr.io/qemus/qemu:7.50@sha256:e7f6fda52503a546fd649670ba46e4bc23dc6dcef275bc3fac48877fbbc430df")
 export vm_ram := env("VM_RAM", "8192")
 export vm_cpus := env("VM_CPUS", "4")
@@ -137,7 +137,7 @@ sudoif command *args:
 # registry already has that version, and a clean worktree also stamps the short
 # HEAD SHA.
 #
-# Example: just build finpilot stable-testing
+# Example: just build homelab stable-testing
 
 # Build the image using the specified parameters
 [group('Image')]
